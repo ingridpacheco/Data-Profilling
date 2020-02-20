@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="i18n-hack"  >
+<target name="i18n-hack">
+  <echo message="Copying i18n files"/>
+  <copy todir="/Users/Ingrid.Pacheco/university/tcc/Data-Profilling/plugins/DataCompletude/src/main/java" overwrite="true">
+    <fileset includes="**/*.properties" dir="/Users/Ingrid.Pacheco/university/tcc/Data-Profilling/plugins/src/main/java"/>
+  </copy>
+</target>
+</project>

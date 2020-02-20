@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="DataCompletude"
+   iconfile="iconAnnotator.png"
+   description="Data Completude"
+   tooltip="Gets the completude percentage of the selected template."
+   category="DataProfilling"
+   classname="br.ufrj.ingrid.kettle.DataCompletudeStepMeta">
+   <libraries>
+		<library name="DataCompletude.jar"/>
+		<library name="lib/KettlePluginTools-1.0.jar"/><library
+			name="lib/jsoup-1.12.1.jar">
+</library>
+   </libraries>
+	
+	<localized_category>
+     <category locale="en_US">DataProfilling</category>
+     <category locale="pt_BR">DataProfilling</category>
+	</localized_category>
+	<localized_description>
+     <description locale="en_US">Data Completude</description>
+	 <description locale="pt_BR">Data Completude</description>
+	</localized_description>
+	<localized_tooltip>
+     <tooltip locale="en_US">Gets the completude percentage of the selected template.</tooltip>
+	 <tooltip locale="pt_BR">Pega a porcentagem de completude do template selecionado.</tooltip>
+	</localized_tooltip>
+</plugin>
