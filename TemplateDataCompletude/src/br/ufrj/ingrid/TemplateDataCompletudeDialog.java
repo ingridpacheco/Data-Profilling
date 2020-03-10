@@ -12,14 +12,18 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -33,7 +37,10 @@ import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.ui.core.widget.ComboVar;
+import org.pentaho.di.ui.core.widget.TextVar;
 import org.pentaho.di.ui.trans.step.BaseStepDialog;
+
+import br.ufrj.ppgi.greco.kettle.plugin.tools.swthelper.SwtHelper;
 
 /**
 * @author IngridPacheco
@@ -41,8 +48,14 @@ import org.pentaho.di.ui.trans.step.BaseStepDialog;
 */
 public class TemplateDataCompletudeDialog extends BaseStepDialog implements StepDialogInterface {
 	private TemplateDataCompletudeMeta TemplateDataCompletude;
+	private SwtHelper swthlp;
+	
+	private Group wInputGroup;
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
+	
+	private Group wOutputGroup;
+	private TextVar wOutputBrowse;
 	
 	private String[] DBpediaValues = {"fr", "ja", "pt"};
 	  
@@ -52,6 +65,7 @@ public class TemplateDataCompletudeDialog extends BaseStepDialog implements Step
 	public TemplateDataCompletudeDialog(Shell parent, Object in, TransMeta tr, String sname) {
 		super(parent, (BaseStepMeta) in, tr, sname);
 		TemplateDataCompletude = (TemplateDataCompletudeMeta) in;
+		swthlp = new SwtHelper(tr, this.props);
 	}
 	
 	public String[] getTemplateValues(String DBpedia){
@@ -74,6 +88,103 @@ public class TemplateDataCompletudeDialog extends BaseStepDialog implements Step
 		  	TemplateValues[0] = "";
 		  	return TemplateValues;
 		}
+	}
+	
+	private ComboVar appendComboVar(Control lastControl, ModifyListener defModListener, Composite parent,
+			String label) {
+		ComboVar combo = swthlp.appendComboVarRow(parent, lastControl, label, defModListener);
+		BaseStepDialog.getFieldsFromPrevious(combo, transMeta, stepMeta);
+		return combo;
+	}
+
+	private TextVar textVarWithButton(Composite parent, Control lastControl, String label, ModifyListener lsMod,
+			String btnLabel, SelectionListener listener) {
+		int middle = props.getMiddlePct();
+		int margin = Const.MARGIN;
+		Label wLabel = new Label(parent, SWT.RIGHT);
+		wLabel.setText(label);
+		props.setLook(wLabel);
+		FormData fdLabel = new FormData();
+		fdLabel.left = new FormAttachment(0, 0);
+		fdLabel.top = new FormAttachment(lastControl, margin);
+		fdLabel.right = new FormAttachment(middle, -margin);
+		wLabel.setLayoutData(fdLabel);
+
+		Button button = new Button(parent, SWT.PUSH | SWT.CENTER);
+		props.setLook(button);
+		button.setText(btnLabel);
+		FormData fdButton = new FormData();
+		fdButton.right = new FormAttachment(100, 0);
+		fdButton.top = new FormAttachment(lastControl, margin);
+		button.setLayoutData(fdButton);
+
+		TextVar text = new TextVar(transMeta, parent, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
+		props.setLook(text);
+		text.addModifyListener(lsMod);
+		FormData fdText = new FormData();
+		fdText.left = new FormAttachment(middle, 0);
+		fdText.right = new FormAttachment(button, -margin);
+		fdText.top = new FormAttachment(lastControl, margin);
+		text.setLayoutData(fdText);
+
+		button.addSelectionListener(listener);
+		return text;
+	}
+	
+	private void fileDialogFunction(int type, String[] fileExtensions, TextVar receptor, String[] filterNames) {
+		FileDialog dialog = new FileDialog(shell, type);
+		dialog.setFilterExtensions(fileExtensions);
+		if (receptor.getText() != null) {
+			dialog.setFileName(receptor.getText());
+		}
+
+		dialog.setFilterNames(filterNames);
+
+		if (dialog.open() != null) {
+			String str = dialog.getFilterPath() + System.getProperty("file.separator") + dialog.getFileName();
+			receptor.setText(str);
+		}
+	}
+	
+	private Control buildContents(Control lastControl, ModifyListener defModListener) {
+		wInputGroup = swthlp.appendGroup(shell, lastControl, "Input Fields");
+		wDBpedia = appendComboVar(wInputGroup, defModListener, wInputGroup,"DBpedia Field");
+		wDBpedia.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				wDBpedia.setItems(DBpediaValues);
+				shell.setCursor(null);
+				busy.dispose();
+			}
+		});
+		wTemplate = appendComboVar(wDBpedia, defModListener, wInputGroup,"Template Field");
+		wTemplate.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wTemplate.setItems(getTemplateValues(wDBpedia.getText()));
+				busy.dispose();
+			}
+		});
+
+		wOutputGroup = swthlp.appendGroup(shell, wInputGroup, "Output Fields");
+		wOutputBrowse = textVarWithButton(wOutputGroup, wOutputGroup, "Report File",
+				defModListener, "Search...", new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						fileDialogFunction(SWT.OPEN, new String[] { "*.txt; *.TXT" },
+								wOutputBrowse, new String[] { ".(txt) files" });
+					}
+				});
+
+		return wOutputGroup;
 	}
 	
 	@Override
@@ -123,67 +234,7 @@ public class TemplateDataCompletudeDialog extends BaseStepDialog implements Step
 		wStepname.setLayoutData(fdStepname);
 		Control lastWidget = wStepname;
 		
-		Label wlDBpedia = new Label(shell, SWT.RIGHT);
-		wlDBpedia.setText("DBpedia Field");// Messages.getString(“KafkaTopicPartitionConsumerDialog.TopicName.Label”));
-		props.setLook(wlDBpedia);
-		FormData fdlDBpedia = new FormData();
-		fdlDBpedia.top = new FormAttachment(lastWidget, margin);
-		fdlDBpedia.left = new FormAttachment(0, 0);
-		fdlDBpedia.right = new FormAttachment(middle, -margin);
-		wlDBpedia.setLayoutData(fdlDBpedia);
-		wDBpedia = new ComboVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wDBpedia);
-		wDBpedia.addModifyListener(lsMod);
-		wDBpedia.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				wDBpedia.setItems(DBpediaValues);
-				shell.setCursor(null);
-				busy.dispose();
-			}
-		});
-		FormData fdDBpedia = new FormData();
-		fdDBpedia.top = new FormAttachment(lastWidget, margin);
-		fdDBpedia.left = new FormAttachment(middle, 0);
-		fdDBpedia.right = new FormAttachment(100, 0);
-		wDBpedia.setLayoutData(fdDBpedia);
-		lastWidget = wDBpedia;
-		
-		Label wlTemplate = new Label(shell, SWT.RIGHT);
-		wlTemplate.setText("Template Field");// Messages.getString(“KafkaTopicPartitionConsumerDialog.TopicName.Label”));
-		props.setLook(wlTemplate);
-		FormData fdlTemplate = new FormData();
-		fdlTemplate.top = new FormAttachment(lastWidget, margin);
-		fdlTemplate.left = new FormAttachment(0, 0);
-		fdlTemplate.right = new FormAttachment(middle, -margin);
-		wlTemplate.setLayoutData(fdlTemplate);
-		wTemplate = new ComboVar(transMeta, shell, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		props.setLook(wTemplate);
-		wTemplate.addModifyListener(lsMod);
-		wTemplate.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				shell.setCursor(null);
-				wTemplate.setItems(getTemplateValues(wDBpedia.getText()));
-				busy.dispose();
-			}
-		});
-		FormData fdTemplate = new FormData();
-		fdTemplate.top = new FormAttachment(lastWidget, margin);
-		fdTemplate.left = new FormAttachment(middle, 0);
-		fdTemplate.right = new FormAttachment(100, 0);
-		wTemplate.setLayoutData(fdTemplate);
-		lastWidget = wTemplate;
-		
-		
+		lastWidget = buildContents(lastWidget, lsMod);
 		
 		// Buttons
 		wOK = new Button(shell, SWT.PUSH);
@@ -258,6 +309,8 @@ public class TemplateDataCompletudeDialog extends BaseStepDialog implements Step
 				wDBpedia.setText(TemplateDataCompletude.getDBpedia());
 			if (TemplateDataCompletude.getTemplate() != null)
 				wTemplate.setText(TemplateDataCompletude.getTemplate());
+			if (TemplateDataCompletude.getOutputFile() != null)
+				wOutputBrowse.setText(TemplateDataCompletude.getOutputFile());
 		}
 	}
 	
@@ -268,6 +321,7 @@ public class TemplateDataCompletudeDialog extends BaseStepDialog implements Step
 		stepname = wStepname.getText();
 		TemplateDataCompletude.setDBpedia(wDBpedia.getText());
 		TemplateDataCompletude.setTemplate(wTemplate.getText());
+		TemplateDataCompletude.setOutputFile(wOutputBrowse.getText());
 		TemplateDataCompletude.setChanged();
 	}
 }

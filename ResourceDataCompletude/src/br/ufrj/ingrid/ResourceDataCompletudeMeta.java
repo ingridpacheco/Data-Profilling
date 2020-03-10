@@ -40,6 +40,7 @@ public class ResourceDataCompletudeMeta extends BaseStepMeta implements StepMeta
 	private String DBpedia;
 	private String template;
 	private String resource;
+	public String browseOutputFilename;
 	
 	public ResourceDataCompletudeMeta() {
 		super(); // allocate BaseStepInfo
@@ -69,6 +70,14 @@ public class ResourceDataCompletudeMeta extends BaseStepMeta implements StepMeta
 		this.resource = resourceValue;
 	}
 	
+	public String getOutputFile() {
+		return browseOutputFilename;
+	}
+
+	public void setOutputFile(String browseOutputFilename) {
+		this.browseOutputFilename = browseOutputFilename;
+	}
+	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta transMeta,
 	Trans trans) {
@@ -90,6 +99,7 @@ public class ResourceDataCompletudeMeta extends BaseStepMeta implements StepMeta
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
+			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
 		// e);
@@ -107,6 +117,9 @@ public class ResourceDataCompletudeMeta extends BaseStepMeta implements StepMeta
 		if (resource != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCE", resource));
 		}
+		if (browseOutputFilename != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
+		}
 		return retVal.toString();
 	}
 	
@@ -115,6 +128,7 @@ public class ResourceDataCompletudeMeta extends BaseStepMeta implements StepMeta
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			resource = rep.getStepAttributeString(stepId, "RESOURCE");
+			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
 		}
@@ -130,6 +144,9 @@ public class ResourceDataCompletudeMeta extends BaseStepMeta implements StepMeta
 			}
 			if (resource != null) {
 				rep.saveStepAttribute(transformationId, stepId, "RESOURCE", resource);
+			}
+			if (browseOutputFilename != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTFILENAME", browseOutputFilename);
 			}
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error saving step Sample Plug-In from the repository", e);

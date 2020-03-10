@@ -39,6 +39,7 @@ public class TemplateDataCompletudeMeta extends BaseStepMeta implements StepMeta
 
 	private String DBpedia;
 	private String template;
+	public String browseOutputFilename;
 	
 	public TemplateDataCompletudeMeta() {
 		super(); // allocate BaseStepInfo
@@ -58,6 +59,14 @@ public class TemplateDataCompletudeMeta extends BaseStepMeta implements StepMeta
 	
 	public void setTemplate(String templateValue) {
 		this.template = templateValue;
+	}
+	
+	public String getOutputFile() {
+		return browseOutputFilename;
+	}
+
+	public void setOutputFile(String browseOutputFilename) {
+		this.browseOutputFilename = browseOutputFilename;
 	}
 	
 	@Override
@@ -80,6 +89,7 @@ public class TemplateDataCompletudeMeta extends BaseStepMeta implements StepMeta
 		try {
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
+			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
 		// e);
@@ -94,6 +104,9 @@ public class TemplateDataCompletudeMeta extends BaseStepMeta implements StepMeta
 		if (template != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("TEMPLATE", template));
 		}
+		if (browseOutputFilename != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
+		}
 		return retVal.toString();
 	}
 	
@@ -101,6 +114,7 @@ public class TemplateDataCompletudeMeta extends BaseStepMeta implements StepMeta
 		try {
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
+			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
 		}
@@ -113,6 +127,9 @@ public class TemplateDataCompletudeMeta extends BaseStepMeta implements StepMeta
 			}
 			if (template != null) {
 				rep.saveStepAttribute(transformationId, stepId, "TEMPLATE", template);
+			}
+			if (browseOutputFilename != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTFILENAME", browseOutputFilename);
 			}
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error saving step Sample Plug-In from the repository", e);

@@ -3,6 +3,8 @@
 */
 package br.ufrj.ingrid;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -240,16 +242,32 @@ public class TemplateDataCompletudeStep extends BaseStep implements StepInterfac
 				checkPropertiesInResource(meta.getDBpedia(), resources.get(i), data.templateProperties, data.properties);
 			}
 			data.quantityOfResources = resources.size();
+			
+			FileWriter writer;
+			try {
+				writer = new FileWriter(meta.getOutputFile(), true);
+				data.bufferedWriter = new BufferedWriter(writer);
+				 
+	            data.bufferedWriter.write("The result of the analysis was:");
+	            data.bufferedWriter.newLine();
+	            data.bufferedWriter.write(String.format("There are %s properties in %s, some of which are not in all resources from this template.", data.templateProperties.size(), meta.getTemplate()));
+	            
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			
+			this.logBasic("Output File is being written... ");
 		}
 		
 		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 4 );
 			    
 		if (data.templateProperties.size() > 0) {
-			String resourceName = data.templateProperties.remove(0);
+			String templateProperty = data.templateProperties.remove(0);
 			
 			Integer quantityOfResourcesThatHasTheProperty;
-			if (data.properties.containsKey(resourceName)) {
-				quantityOfResourcesThatHasTheProperty = data.properties.get(resourceName);
+			if (data.properties.containsKey(templateProperty)) {
+				quantityOfResourcesThatHasTheProperty = data.properties.get(templateProperty);
 			}
 			else {
 				quantityOfResourcesThatHasTheProperty = 0;
@@ -258,10 +276,21 @@ public class TemplateDataCompletudeStep extends BaseStep implements StepInterfac
 			data.totalQuantityOfResourcesThatHasTheProperty += quantityOfResourcesThatHasTheProperty;
 			data.quantityTotal += data.quantityOfResources;
 			
-			outputRow[data.outputPropertyIndex] = resourceName;
+			data.percentage = getPercentage(quantityOfResourcesThatHasTheProperty, data.quantityOfResources);
+			
+            try {
+            	data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("The property %s is in %s resources from a total of %s resources, which leads to a completude percentage of %s.", templateProperty, quantityOfResourcesThatHasTheProperty, data.quantityOfResources, data.percentage));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			
+			outputRow[data.outputPropertyIndex] = templateProperty;
 			outputRow[data.outputInsideResourcesIndex] = quantityOfResourcesThatHasTheProperty;
 			outputRow[data.outputTotalIndex] = data.quantityOfResources;
-			outputRow[data.outputPercentageIndex] = getPercentage(quantityOfResourcesThatHasTheProperty, data.quantityOfResources);
+			outputRow[data.outputPercentageIndex] = data.percentage;
 			
 			putRow(data.outputRowMeta, outputRow);
 			
@@ -269,10 +298,22 @@ public class TemplateDataCompletudeStep extends BaseStep implements StepInterfac
 		}
 		else {
 			
+			data.percentage = getPercentage(data.totalQuantityOfResourcesThatHasTheProperty, data.quantityTotal);
+			
+			try {
+            	data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("To sum up, there are %s properties from this template that are inside resources (the amount of all property inside resources), from a total os %s properties that should be inside resources (considering that all the properties should be in all resources). The completude percentage of this template is %s.", data.totalQuantityOfResourcesThatHasTheProperty, data.quantityTotal, data.percentage));
+				data.bufferedWriter.close();
+				this.logBasic("Output File was written... ");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			outputRow[data.outputPropertyIndex] = "Total";
 			outputRow[data.outputInsideResourcesIndex] = data.totalQuantityOfResourcesThatHasTheProperty;
 			outputRow[data.outputTotalIndex] = data.quantityTotal;
-			outputRow[data.outputPercentageIndex] = getPercentage(data.totalQuantityOfResourcesThatHasTheProperty, data.quantityTotal);
+			outputRow[data.outputPercentageIndex] = data.percentage;
 			
 			putRow(data.outputRowMeta, outputRow);
 			

@@ -295,5 +295,6 @@
 	<classpathentry kind="lib" path="/Users/Ingrid.Pacheco/Downloads/jar_files (1)/commons-lang3-3.9.jar"/>
 	<classpathentry kind="lib" path="/Users/Ingrid.Pacheco/Downloads/jar_files (1)/jena-base-3.14.0.jar"/>
 	<classpathentry kind="lib" path="/Users/Ingrid.Pacheco/Downloads/jar_files (1)/jena-shaded-guava-3.14.0.jar"/>
+	<classpathentry kind="lib" path="/Users/Ingrid.Pacheco/Downloads/data-integration/plugins/steps/TemplatePropertyAnalyzer/lib/KettlePluginTools.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

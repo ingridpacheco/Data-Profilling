@@ -1,5 +1,6 @@
 package br.ufrj.ingrid;
 
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -29,6 +30,10 @@ public RowMetaInterface outputRowMeta;
 	Integer totalQuantityOfResourcesThatHasTheProperty = 0;
 	Integer quantityTotal = 0;
 	Integer quantityOfResources = 0;
+	
+	BufferedWriter bufferedWriter;
+	
+	String percentage = "";
 	
 	public TemplateDataCompletudeData() {
 		super();

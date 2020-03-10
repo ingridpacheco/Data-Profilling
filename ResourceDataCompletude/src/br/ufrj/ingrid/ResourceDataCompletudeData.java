@@ -25,6 +25,8 @@ public class ResourceDataCompletudeData extends BaseStepData implements StepData
 	List<String> missingProperties = new ArrayList<>();
 	List<String> resourceProperties = new ArrayList<>();
 	
+	String percentage = "";
+	
 	public ResourceDataCompletudeData() {
 		super();
 	}

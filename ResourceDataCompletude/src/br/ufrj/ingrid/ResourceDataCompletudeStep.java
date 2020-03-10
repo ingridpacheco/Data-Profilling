@@ -3,6 +3,8 @@
 */
 package br.ufrj.ingrid;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -160,12 +162,35 @@ public class ResourceDataCompletudeStep extends BaseStep implements StepInterfac
 			
 			List<String> missingProperties = getMissingProperties(data.resourceProperties, data.templateProperties);
 			List<String> notMappedProperties = getNotMappedProperties(data.resourceProperties, data.templateProperties);
+			
+			data.percentage = getPercentage(data.resourceProperties.size(), notMappedProperties.size(), data.templateProperties.size());
+			
+			this.logBasic("Output File is being written... ");
+			
+			FileWriter writer;
+			try {
+				writer = new FileWriter(meta.getOutputFile(), true);
+				BufferedWriter bufferedWriter = new BufferedWriter(writer);
+				 
+	            bufferedWriter.write("The result of the analysis was:");
+	            bufferedWriter.newLine();
+	            bufferedWriter.write(String.format("There are %s properties in the resource %s from %s, in which %s are not mapped in the template, and %s from the template's properties are not in the resource.", data.resourceProperties.size(), meta.getResource(), meta.getTemplate(), notMappedProperties.size(), missingProperties.size()));
+	            bufferedWriter.newLine();
+	            bufferedWriter.write(String.format("In a total of %s properties in the template, the completude percentage of the resource is %s.", data.templateProperties.size(), data.percentage));
+	 
+	            bufferedWriter.close();
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			
+			this.logBasic("Output File was written... ");
 				    
 			outputRow[data.outputExistingPropertiesIndex] = data.resourceProperties.size();
 			outputRow[data.outputNotMapedPropertiesIndex] = notMappedProperties.size();
 			outputRow[data.outputMissingPropertiesIndex] = missingProperties.size();
 			outputRow[data.outputTotalIndex] = data.templateProperties.size();
-			outputRow[data.outputPercentageIndex] = getPercentage(data.resourceProperties.size(), notMappedProperties.size(), data.templateProperties.size());
+			outputRow[data.outputPercentageIndex] = data.percentage;
 			
 			putRow(data.outputRowMeta, outputRow);
 		}

@@ -3,6 +3,8 @@
 */
 package br.ufrj.ingrid;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -222,6 +224,22 @@ public class ResourcesInsideTemplateAnalyzerStep extends BaseStep implements Ste
 		    data.templateProperties = getProperties(meta.getDBpedia(), meta.getTemplate());
 			data.templateProperties.remove(0);
 			data.resources = getResources(meta.getDBpedia(), meta.getTemplate());
+			
+			FileWriter writer;
+			try {
+				writer = new FileWriter(meta.getOutputFile(), true);
+				data.bufferedWriter = new BufferedWriter(writer);
+				 
+	            data.bufferedWriter.write("The result of the analysis was:");
+	            data.bufferedWriter.newLine();
+	            data.bufferedWriter.write(String.format("There are %s resources inside %s. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size(), meta.getTemplate()));
+	            
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			
+			this.logBasic("Output File is being written... ");
 		}
 		
 		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 5 );
@@ -231,18 +249,36 @@ public class ResourcesInsideTemplateAnalyzerStep extends BaseStep implements Ste
 			List<String> resourceProperties = getResourceProperties(meta.getDBpedia(), data.resources.remove(0));
 			List<String> missingProperties = getMissingProperties(resourceProperties, data.templateProperties);
 			List<String> notMappedProperties = getNotMappedProperties(resourceProperties, data.templateProperties);
+			data.percentage = getPercentage(resourceProperties.size(), notMappedProperties.size(), data.templateProperties.size());
+			
+            try {
+            	data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("The resource %s has %s properties, in which %s template properties are not in it, and %s properties are not mapped in the template.", resourceName, resourceProperties.size(), missingProperties.size(), notMappedProperties.size()));
+				data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("As the template has %s properties, it leads to a completude percentage of %s.", data.templateProperties.size(), data.percentage));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			outputRow[data.outputResourcesIndex] = resourceName;
 			outputRow[data.outputExistingPropertiesIndex] = resourceProperties.size();
 			outputRow[data.outputMissingPropertiesIndex] = missingProperties.size();
 			outputRow[data.outputTotalIndex] = data.templateProperties.size();
-			outputRow[data.outputPercentageIndex] = getPercentage(resourceProperties.size(), notMappedProperties.size(), data.templateProperties.size());
+			outputRow[data.outputPercentageIndex] = data.percentage;
 			
 			putRow(data.outputRowMeta, outputRow);
 			
 			return true;
 		}
 		else {
+			try {
+				data.bufferedWriter.close();
+				this.logBasic("Output File was written... ");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			return false;
 		}
 	}

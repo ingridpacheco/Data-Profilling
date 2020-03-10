@@ -3,6 +3,8 @@
 */
 package br.ufrj.ingrid;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,30 +81,6 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		}
 	}
 	
-	public List<String> getMissingProperties(List<String> resourceProperties, List<String> templateProperties) {
-		List<String> missingProperties = new ArrayList<>();
-
-		for (int i = 0; i < templateProperties.size(); i++) {			
-			if (!resourceProperties.contains(templateProperties.get(i)) && !missingProperties.contains(templateProperties.get(i))) {
-				missingProperties.add(templateProperties.get(i));
-			}
-		}
-		
-		return missingProperties;
-	}
-	
-	public List<String> getNotMappedProperties(List<String> resourceProperties, List<String> templateProperties) {
-		List<String> notMappedProperties = new ArrayList<>();
-
-		for (int i = 0; i < resourceProperties.size(); i++) {			
-			if (!templateProperties.contains(resourceProperties.get(i)) && !notMappedProperties.contains(resourceProperties.get(i))) {
-				notMappedProperties.add(resourceProperties.get(i));
-			}
-		}
-		
-		return notMappedProperties;
-	}
-	
 	public List<String> getResourceProperties(String DBpedia, String resource) {
 		List<String> resourceProperties = new ArrayList<>();
 		resource = resource.replace(" ", "_");
@@ -135,6 +113,30 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		return percentage.toString().concat("%");
 	}
 	
+	public List<String> getAllProperties(List<String> templateProperties, List<String> resourceProperties, List<String> missingProperties, List<String> notMapped) {
+		List<String> allProperties = new ArrayList<>();
+		
+		templateProperties.forEach(property -> {
+			if (!allProperties.contains(property)) {
+				allProperties.add(property);
+			}
+			if (!resourceProperties.contains(property)) {
+				missingProperties.add(property);
+			}
+		});
+		
+		resourceProperties.forEach(property -> {
+			if (!allProperties.contains(property)) {
+				allProperties.add(property);
+			}
+			if (!templateProperties.contains(property)) {
+				notMapped.add(property);
+			}
+		});
+		
+		return allProperties;
+	}
+	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
 		meta = (ResourcePropertiesAnalyzerMeta) smi;
 		data = (ResourcePropertiesAnalyzerData) sdi;
@@ -152,47 +154,78 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 			data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
 			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
 			
-			data.outputExistingPropertiesIndex = data.outputRowMeta.indexOfValue("Existing Properties");
-			data.outputMissingPropertiesIndex = data.outputRowMeta.indexOfValue( "Missing Properties" );
-			data.outputNotMapedPropertiesIndex = data.outputRowMeta.indexOfValue( "Not Maped Properties" );
-		      
+			data.outputExistingPropertiesIndex = data.outputRowMeta.indexOfValue("Property");
+			data.outputNotMapedPropertiesIndex = data.outputRowMeta.indexOfValue( "Is property in template?" );
+			data.outputMissingPropertiesIndex = data.outputRowMeta.indexOfValue( "Is property in resource?" );
+			   
 		    data.templateProperties = getProperties(meta.getDBpedia(), meta.getTemplate());
 			data.templateProperties.remove(0);
 			data.resourceProperties = getResourceProperties(meta.getDBpedia(), meta.getResource());
-			data.missingProperties = getMissingProperties(data.resourceProperties, data.templateProperties);
-			data.notMappedProperties = getNotMappedProperties(data.resourceProperties, data.templateProperties);
+			data.allProperties = getAllProperties(data.templateProperties, data.resourceProperties, data.missingProperties, data.notMappedProperties);
+			
+			FileWriter writer;
+			try {
+				writer = new FileWriter(meta.getOutputFile(), true);
+				data.bufferedWriter = new BufferedWriter(writer);
+				 
+	            data.bufferedWriter.write("The result of the analysis was:");
+	            data.bufferedWriter.newLine();
+	            data.bufferedWriter.write(String.format("There are %s properties joining the template's properties and the resource's properties, in which %s are the %s's properties and %s are the %s's properties.", data.allProperties.size(), data.resourceProperties.size(), meta.getResource(), data.templateProperties.size(), meta.getTemplate()));
+	            data.bufferedWriter.newLine();
+	            data.bufferedWriter.write(String.format("Some of this properties, %s, are not in DBpedia. Also, some of them, %s, are not in the resource.", data.notMappedProperties.size(), data.missingProperties.size()));
+	            
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			
+			this.logBasic("Output File is being written... ");
 		}
 		
 		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 3 );
 		
-		if (data.resourceProperties.size() > 0) {
-			outputRow[data.outputExistingPropertiesIndex] = data.resourceProperties.remove(0);
-		}
-		else {
-			outputRow[data.outputExistingPropertiesIndex] = "";
-		}
-		
-		if (data.notMappedProperties.size() > 0) {
-			outputRow[data.outputNotMapedPropertiesIndex] = data.notMappedProperties.remove(0);
-		}
-		else {
-			outputRow[data.outputNotMapedPropertiesIndex] = "";
-		}
-		
-		if (data.missingProperties.size() > 0) {
-			outputRow[data.outputMissingPropertiesIndex] = data.missingProperties.remove(0);
-		}
-		else {
-			outputRow[data.outputMissingPropertiesIndex] = "";
-		}
-		
-		putRow(data.outputRowMeta, outputRow);
-		
-		if (data.missingProperties.size() == 0 && data.resourceProperties.size() == 0) {
-			return false;
-		}
-		else {
+		if (data.allProperties.size() > 0) {
+			
+			String property = data.allProperties.remove(0);
+			
+			String isMapped = "Yes";
+			String isInResource = "Yes";
+			
+			if (data.notMappedProperties.contains(property)) {
+				isMapped = "No";
+			}
+			
+			if (data.missingProperties.contains(property)) {
+				isInResource = "No";
+			}
+			
+			if ((isInResource.equals("Yes") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties on Resource and Template")) || (isInResource.equals("Yes") && isMapped.equals("No") && meta.getWhichProperty().equals("Properties only on Resource")) || isInResource.equals("No") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties only on Template") || meta.getWhichProperty().equals("All")) {
+				try {
+					data.bufferedWriter.newLine();
+					data.bufferedWriter.write(String.format("The property %s: Is in %s? %s; Is in %s? %s", property, meta.getTemplate(), isMapped, meta.getResource(), isInResource));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				outputRow[data.outputExistingPropertiesIndex] = property;
+				outputRow[data.outputNotMapedPropertiesIndex] = isMapped;
+				outputRow[data.outputMissingPropertiesIndex] = isInResource;
+				
+				putRow(data.outputRowMeta, outputRow);
+			}
+			
 			return true;
+		}
+		else {
+			try {
+				data.bufferedWriter.close();
+				this.logBasic("Output File was written... ");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return false;
 		}
 	}
 

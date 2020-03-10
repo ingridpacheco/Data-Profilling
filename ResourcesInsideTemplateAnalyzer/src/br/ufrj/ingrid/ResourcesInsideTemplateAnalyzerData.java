@@ -1,5 +1,6 @@
 package br.ufrj.ingrid;
 
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -23,6 +24,9 @@ public class ResourcesInsideTemplateAnalyzerData extends BaseStepData implements
 	
 	List<String> resources = new ArrayList<>();
 	List<String> templateProperties = new ArrayList<>();
+	
+	BufferedWriter bufferedWriter;
+	String percentage = "";
 	
 	public ResourcesInsideTemplateAnalyzerData() {
 		super();

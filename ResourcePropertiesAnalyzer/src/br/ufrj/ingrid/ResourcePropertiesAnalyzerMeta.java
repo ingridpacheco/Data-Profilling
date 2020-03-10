@@ -40,6 +40,8 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 	private String DBpedia;
 	private String template;
 	private String resource;
+	private String whichProperty;
+	private String browseOutputFilename;
 	
 	public ResourcePropertiesAnalyzerMeta() {
 		super(); // allocate BaseStepInfo
@@ -69,6 +71,22 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 		this.resource = resourceValue;
 	}
 	
+	public String getOutputFile() {
+		return browseOutputFilename;
+	}
+
+	public void setOutputFile(String browseOutputFilename) {
+		this.browseOutputFilename = browseOutputFilename;
+	}
+	
+	public String getWhichProperty() {
+		return whichProperty;
+	}
+
+	public void setWhichProperty(String whichProperty) {
+		this.whichProperty = whichProperty;
+	}
+	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta transMeta,
 	Trans trans) {
@@ -90,6 +108,8 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
+			whichProperty = XMLHandler.getTagValue(stepnode,"WHICHPROPERTY");
+			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
 		// e);
@@ -107,6 +127,12 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 		if (resource != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCE", resource));
 		}
+		if (whichProperty != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("WHICHPROPERTY", whichProperty));
+		}
+		if (browseOutputFilename != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
+		}
 		return retVal.toString();
 	}
 	
@@ -115,6 +141,8 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			resource = rep.getStepAttributeString(stepId, "RESOURCE");
+			whichProperty = rep.getStepAttributeString(stepId, "WHICHPROPERTY");
+			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
 		}
@@ -131,26 +159,32 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 			if (resource != null) {
 				rep.saveStepAttribute(transformationId, stepId, "RESOURCE", resource);
 			}
+			if (whichProperty != null) {
+				rep.saveStepAttribute(transformationId, stepId, "WHICHPROPERTY", whichProperty);
+			}
+			if (browseOutputFilename != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTFILENAME", browseOutputFilename);
+			}
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error saving step Sample Plug-In from the repository", e);
 		}
 	}
 	
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
-		ValueMetaInterface ExistingPropertiesMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
-		ExistingPropertiesMeta.setName("Existing Properties");
-		ExistingPropertiesMeta.setOrigin(origin);
-		rowMeta.addValueMeta(ExistingPropertiesMeta);
+		ValueMetaInterface PropertiesMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		PropertiesMeta.setName("Property");
+		PropertiesMeta.setOrigin(origin);
+		rowMeta.addValueMeta(PropertiesMeta);
 		
-		ValueMetaInterface NotMapedProperties = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
-		NotMapedProperties.setName("Not Maped Properties");
-		NotMapedProperties.setOrigin(origin);
-		rowMeta.addValueMeta(NotMapedProperties);
+		ValueMetaInterface IsMapedProperty = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		IsMapedProperty.setName("Is property in template?");
+		IsMapedProperty.setOrigin(origin);
+		rowMeta.addValueMeta(IsMapedProperty);
 		
-		ValueMetaInterface MissingPropertiesMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
-		MissingPropertiesMeta.setName("Missing Properties");
-		MissingPropertiesMeta.setOrigin(origin);
-		rowMeta.addValueMeta(MissingPropertiesMeta);
+		ValueMetaInterface IsMissingProperty = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		IsMissingProperty.setName("Is property in resource?");
+		IsMissingProperty.setOrigin(origin);
+		rowMeta.addValueMeta(IsMissingProperty);
 	}
 	
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev, String input[], String output[], RowMetaInterface info) {
