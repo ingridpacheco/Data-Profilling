@@ -42,6 +42,8 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 	private String resource;
 	private String whichProperty;
 	private String browseOutputFilename;
+	public String browseOutputCSVFilename;
+	private Boolean notMappedResources;
 	
 	public ResourcePropertiesAnalyzerMeta() {
 		super(); // allocate BaseStepInfo
@@ -87,6 +89,22 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 		this.whichProperty = whichProperty;
 	}
 	
+	public String getOutputCSVFile() {
+		return browseOutputCSVFilename;
+	}
+
+	public void setOutputCSVFile(String browseOutputCSVFilename) {
+		this.browseOutputCSVFilename = browseOutputCSVFilename;
+	}
+	
+	public boolean getNotMappedResources() {
+		return notMappedResources;
+	}
+	
+	public void setNotMappedResources(Boolean notMappedResources) {
+		this.notMappedResources = notMappedResources;
+	}
+	
 	@Override
 	public StepInterface getStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int cnr, TransMeta transMeta,
 	Trans trans) {
@@ -100,6 +118,7 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 	
 	@Override
 	public void setDefault() {
+		notMappedResources = false;
 	// TODO Auto-generated method stub
 	}
 	
@@ -110,6 +129,8 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
 			whichProperty = XMLHandler.getTagValue(stepnode,"WHICHPROPERTY");
 			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
+			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
+			notMappedResources = "Y".equals(XMLHandler.getTagValue(stepnode, "NOTMAPPEDRESOURCES"));
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
 		// e);
@@ -133,6 +154,10 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 		if (browseOutputFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
 		}
+		if (browseOutputCSVFilename != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename));
+		}
+		retVal.append("    ").append(XMLHandler.addTagValue("NOTMAPPEDRESOURCES", notMappedResources));
 		return retVal.toString();
 	}
 	
@@ -143,6 +168,8 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 			resource = rep.getStepAttributeString(stepId, "RESOURCE");
 			whichProperty = rep.getStepAttributeString(stepId, "WHICHPROPERTY");
 			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
+			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
+			notMappedResources = rep.getStepAttributeBoolean(stepId, "NOTMAPPEDRESOURCES");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
 		}
@@ -165,6 +192,11 @@ public class ResourcePropertiesAnalyzerMeta extends BaseStepMeta implements Step
 			if (browseOutputFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTFILENAME", browseOutputFilename);
 			}
+			if (browseOutputCSVFilename != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename);
+			}
+			rep.saveStepAttribute(transformationId, stepId,
+	                "NOTMAPPEDRESOURCES", notMappedResources);
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error saving step Sample Plug-In from the repository", e);
 		}

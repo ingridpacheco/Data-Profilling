@@ -43,6 +43,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
@@ -67,12 +68,33 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
 	private ComboVar wResource;
+	private Button wGetNotMappedResources;
 	
 	private Group wOutputGroup;
 	private ComboVar wWhichProperty;
 	private TextVar wOutputBrowse;
+	private TextVar wOutputCSVBrowse;
 	
-	private String[] DBpediaValues = {"fr", "ja", "pt"};
+	private String[] DBpediaValues = {
+			"pt", "en", "ja",
+			"ar", "az", "be",
+			"bg", "bn", "ca",
+			"ceb", "Commons", "cs",
+			"cy", "da", "de",
+			"el", "en", "eo",
+			"es", "et", "eu",
+			"fa", "fi", "fr",
+			"ga", "gl", "hi",
+			"hr", "hu", "hy",
+			"id", "it", "ko",
+			"lt", "lv", "mk",
+			"mt", "nl", "pl",
+			"pt", "ru", "ro",
+			"sk", "sl", "sr",
+			"sv", "tr", "uk",
+			"ur", "vi", "war",
+			"zh"
+	};
 	private String[] TemplateValues;
 	private String[] checkProperties = {"Properties on Resource and Template", "Properties only on Resource", "Properties only on Template", "All"};
 	
@@ -104,12 +126,69 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 		}
 	}
 	
-	public String[] getResourceValues(String DBpedia, String Template) throws IOException{
+	public List<String> getResourceNames(Elements resources, List<String> notMappedResources){
+		this.logBasic("Getting the not mapped resources names");
+		for (int i = 0; i < resources.size(); i++) {
+			if (!resources.get(i).hasAttr("accesskey")) {
+				String resourceName = resources.get(i).text();
+            	
+            	this.logBasic(String.format("Not Mapped Resource: %s",resourceName));
+            	if (!notMappedResources.contains(resourceName)) {
+            		notMappedResources.add(resourceName);
+            	}
+			}
+			else {
+				break;
+			}
+		}
 		
-		List<String> templateResources = new ArrayList<>();
+		return notMappedResources;
+	}
+	
+	public List<String> getNotMappedResources(String DBpedia, String template, List<String> mappedResources) {
+		this.logBasic("Getting the not mapped resources");
+		List<String> notMappedResources = mappedResources;
 		
-		Template = Template.replace(" ", "_");
-		
+		try {
+			String url = String.format("https://tools.wmflabs.org/templatecount/index.php?lang=%s&namespace=10&name=%s#bottom", DBpedia, template);
+			this.logBasic(String.format("Url: %s", url));
+			Document doc = Jsoup.connect(url).get();
+			Integer quantity = Integer.parseInt(doc.select("form + h3 + p").text().split(" ")[0]);
+			this.logBasic(String.format("Quantity %s", quantity));
+			
+			String resourcesUrl = String.format("https://%s.wikipedia.org/wiki/Special:WhatLinksHere/Template:%s?limit=2000&namespace=0", DBpedia, template);
+			Document resourcesDoc = Jsoup.connect(resourcesUrl).get();
+			Elements resources = resourcesDoc.select("li a[href^=\"/wiki/\"]");
+			Element newPage = resourcesDoc.select("p ~ a[href^=\"/w/index.php?\"]").first();
+			
+			this.logBasic(String.format("Not mapped resources: %s", resources.size()));
+			
+			notMappedResources = getResourceNames(resources, notMappedResources);
+			
+			if (quantity > 2000) {
+				Integer timesDivided = quantity/2000;
+				while (timesDivided > 0) {
+					String newUrl = newPage.attr("href");
+					newUrl = newUrl.replaceAll("amp;", "");
+					String otherPageUrl = String.format("https://%s.wikipedia.org%s", DBpedia, newUrl);
+					Document moreResourceDocs = Jsoup.connect(otherPageUrl).get();
+					resources = moreResourceDocs.select("li a[href^=\"/wiki/\"]");
+					newPage = moreResourceDocs.select("p ~ a[href^=\"/w/index.php?\"]").get(1);
+					notMappedResources = getResourceNames(resources, notMappedResources);
+					timesDivided -= 1;
+				}
+			}
+			
+			return notMappedResources;
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return notMappedResources;
+		}
+	}
+	
+	public List<String> getMappedResources(String DBpedia, String Template, List<String> resources) {
 		Map<String, String> mapTemplateUrl = new HashMap<String, String>();
 		mapTemplateUrl.put("pt", "Predefinição");
 		mapTemplateUrl.put("fr", "Modèle");
@@ -143,12 +222,28 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
             while (rs.hasNext()) {
             	QuerySolution resource = rs.next();
             	String templateName = resource.getLiteral("name").getString();
-            	templateResources.add(templateName);
+            	resources.add(templateName);
             }
             ResultSetFormatter.out(System.out, rs, query);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return resources;
+	}
+	
+	public String[] getResourceValues(String DBpedia, String Template, Boolean hasNotMapped) throws IOException{
+		
+		List<String> templateResources = new ArrayList<>();
+		
+		Template = Template.replace(" ", "_");
+		
+		if (DBpedia.equals("pt") || DBpedia.equals("fr") || DBpedia.equals("ja")) {
+			templateResources = getMappedResources(DBpedia, Template, templateResources);
+		}
+		
+		if (hasNotMapped) {
+			templateResources = getNotMappedResources(DBpedia, Template, templateResources);
+		}
         
         return templateResources.toArray(new String[0]);
 	}
@@ -237,7 +332,21 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 				busy.dispose();
 			}
 		});
-		wResource = appendComboVar(wTemplate, defModListener, wInputGroup,"Resource Field");
+		wGetNotMappedResources = swthlp.appendCheckboxRow(wInputGroup, wTemplate, "Consider resources not mapped in template",
+				new SelectionListener() {
+	            @Override
+	            public void widgetSelected(SelectionEvent arg0)
+	            {
+	            	resourcePropertiesAnalyzer.setChanged();
+	            }
+	
+	            @Override
+	            public void widgetDefaultSelected(SelectionEvent arg0)
+	            {
+	            	resourcePropertiesAnalyzer.setChanged();
+	            }
+        	});
+		wResource = appendComboVar(wGetNotMappedResources, defModListener, wInputGroup,"Resource Field");
 		wResource.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -247,7 +356,7 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 				shell.setCursor(busy);
 				shell.setCursor(null);
 				try {
-					wResource.setItems(getResourceValues(wDBpedia.getText(),wTemplate.getText()));
+					wResource.setItems(getResourceValues(wDBpedia.getText(),wTemplate.getText(), wGetNotMappedResources.getSelection()));
 				} catch (IOException e1) {
 					String[] resources = new String[0];
 					// TODO Auto-generated catch block
@@ -276,6 +385,13 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.txt; *.TXT" },
 								wOutputBrowse, new String[] { ".(txt) files" });
+					}
+				});
+		wOutputCSVBrowse = textVarWithButton(wOutputGroup, wOutputBrowse, "CSV File",
+				defModListener, "Search...", new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
+								wOutputCSVBrowse, new String[] { ".(csv) files" });
 					}
 				});
 
@@ -411,6 +527,9 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 				wWhichProperty.setText(resourcePropertiesAnalyzer.getWhichProperty());
 			if (resourcePropertiesAnalyzer.getOutputFile() != null)
 				wOutputBrowse.setText(resourcePropertiesAnalyzer.getOutputFile());
+			if (resourcePropertiesAnalyzer.getOutputCSVFile() != null)
+				wOutputCSVBrowse.setText(resourcePropertiesAnalyzer.getOutputCSVFile());
+			wGetNotMappedResources.setSelection(resourcePropertiesAnalyzer.getNotMappedResources());
 		}
 	}
 	
@@ -424,6 +543,8 @@ public class ResourcePropertiesAnalyzerDialog extends BaseStepDialog implements 
 		resourcePropertiesAnalyzer.setResource(wResource.getText());
 		resourcePropertiesAnalyzer.setWhichProperty(wWhichProperty.getText());
 		resourcePropertiesAnalyzer.setOutputFile(wOutputBrowse.getText());
+		resourcePropertiesAnalyzer.setOutputCSVFile(wOutputCSVBrowse.getText());
+		resourcePropertiesAnalyzer.setNotMappedResources(wGetNotMappedResources.getSelection());
 		resourcePropertiesAnalyzer.setChanged();
 	}
 }

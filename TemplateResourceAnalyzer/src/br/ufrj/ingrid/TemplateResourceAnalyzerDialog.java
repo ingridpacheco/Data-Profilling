@@ -47,27 +47,46 @@ import br.ufrj.ppgi.greco.kettle.plugin.tools.swthelper.SwtHelper;
 *
 */
 public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements StepDialogInterface {
-	private TemplateResourceAnalyzerMeta TemplateResourceAnalyzer;
+	private TemplateResourceAnalyzerMeta templateResourceAnalyzer;
 	private SwtHelper swthlp;
 	
 	private Group wInputGroup;
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
-	private TextVar wBrowse;
+	private Button wGetNotMappedResources;
 	
 	private Group wOutputGroup;
-	private ComboVar wResource;
+	private ComboVar wOrder;
 	private TextVar wOutputBrowse;
+	private TextVar wOutputCSVBrowse;
 	
-	
-	private String[] DBpediaValues = {"fr", "ja", "pt"};
+	private String[] DBpediaValues = {
+			"pt", "en", "ja",
+			"ar", "az", "be",
+			"bg", "bn", "ca",
+			"ceb", "Commons", "cs",
+			"cy", "da", "de",
+			"el", "en", "eo",
+			"es", "et", "eu",
+			"fa", "fi", "fr",
+			"ga", "gl", "hi",
+			"hr", "hu", "hy",
+			"id", "it", "ko",
+			"lt", "lv", "mk",
+			"mt", "nl", "pl",
+			"pt", "ru", "ro",
+			"sk", "sl", "sr",
+			"sv", "tr", "uk",
+			"ur", "vi", "war",
+			"zh"
+	};
+	private String[] OrderValues = {"Ascending", "Descending"};
 	private String[] TemplateValues;
-	private String[] CheckResources = {"Resources on DBpedia", "Resources missing in DBpedia", "All"};
 	
 	
 	public TemplateResourceAnalyzerDialog(Shell parent, Object in, TransMeta tr, String sname) {
 		super(parent, (BaseStepMeta) in, tr, sname);
-		TemplateResourceAnalyzer = (TemplateResourceAnalyzerMeta) in;
+		templateResourceAnalyzer = (TemplateResourceAnalyzerMeta) in;
 		swthlp = new SwtHelper(tr, this.props);
 	}
 	
@@ -177,35 +196,47 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 				busy.dispose();
 			}
 		});
-		
-		wBrowse = textVarWithButton(wInputGroup, wTemplate, "Resources File",
-				defModListener, "Search...", new SelectionAdapter() {
-					public void widgetSelected(SelectionEvent e) {
-						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
-								wBrowse, new String[] { ".(csv) files" });
-					}
-				});
-		
+		wGetNotMappedResources = swthlp.appendCheckboxRow(wInputGroup, wTemplate, "Consider resources not mapped in template",
+				new SelectionListener() {
+	            @Override
+	            public void widgetSelected(SelectionEvent arg0)
+	            {
+	            	templateResourceAnalyzer.setChanged();
+	            }
+	
+	            @Override
+	            public void widgetDefaultSelected(SelectionEvent arg0)
+	            {
+	            	templateResourceAnalyzer.setChanged();
+	            }
+        	});
 
 		wOutputGroup = swthlp.appendGroup(shell, wInputGroup, "Output Fields");
-		wResource = appendComboVar(wOutputGroup, defModListener, wOutputGroup,"Show which resources?");
-		wResource.addFocusListener(new FocusListener() {
+		wOrder = appendComboVar(wOutputGroup, defModListener, wOutputGroup,"Which order?");
+		wOrder.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
 
 			public void focusGained(FocusEvent e) {
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
+				wOrder.setItems(OrderValues);
 				shell.setCursor(null);
-				wResource.setItems(CheckResources);
 				busy.dispose();
 			}
 		});
-		wOutputBrowse = textVarWithButton(wOutputGroup, wResource, "Report File",
+		wOutputBrowse = textVarWithButton(wOutputGroup, wOrder, "Report File",
 				defModListener, "Search...", new SelectionAdapter() {
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.txt; *.TXT" },
 								wOutputBrowse, new String[] { ".(txt) files" });
+					}
+				});
+		wOutputCSVBrowse = textVarWithButton(wOutputGroup, wOutputBrowse, "CSV File",
+				defModListener, "Search...", new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
+								wOutputCSVBrowse, new String[] { ".(csv) files" });
 					}
 				});
 
@@ -219,23 +250,23 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 		
 		shell = new Shell(parent, SWT.DIALOG_TRIM | SWT.RESIZE | SWT.MIN | SWT.MAX);
 		props.setLook(shell);
-		setShellImage(shell, TemplateResourceAnalyzer);
+		setShellImage(shell, templateResourceAnalyzer);
 		
 		ModifyListener lsMod = new ModifyListener() {
 		
 			public void modifyText(ModifyEvent e) {
-				TemplateResourceAnalyzer.setChanged();
+				templateResourceAnalyzer.setChanged();
 			}
 		};
 	
-		changed = TemplateResourceAnalyzer.hasChanged();
+		changed = templateResourceAnalyzer.hasChanged();
 		
 		FormLayout formLayout = new FormLayout();
 		formLayout.marginWidth = Const.FORM_MARGIN;
 		formLayout.marginHeight = Const.FORM_MARGIN;
 		
 		shell.setLayout(formLayout);
-		shell.setText("Missing Properties in Template");// Messages.getString(“KafkaTopicPartitionConsumerDialog.Shell.Title”));
+		shell.setText("Template Resource Analyzer");// Messages.getString(“KafkaTopicPartitionConsumerDialog.Shell.Title”));
 		
 		int middle = props.getMiddlePct();
 		int margin = Const.MARGIN;
@@ -279,7 +310,6 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 				ok();
 			}
 		};
-		
 		wCancel.addListener(SWT.Selection, lsCancel);
 		wOK.addListener(SWT.Selection, lsOK);
 		
@@ -291,7 +321,10 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 		
 		// Set the shell size, based upon previous time…
 		setSize(shell, 200, 150, true);
-		getData(TemplateResourceAnalyzer, true);
+		getData(templateResourceAnalyzer, true);
+		// consumerMeta.setChanged(changed);
+		
+		// setTableFieldCombo();
 		
 		shell.open();
 		while (!shell.isDisposed()) {
@@ -308,13 +341,13 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 		if (Const.isEmpty(wStepname.getText())) {
 			return;
 		}
-		setData(TemplateResourceAnalyzer);
+		setData(templateResourceAnalyzer);
 		dispose();
 	}
 	
 	private void cancel() {
 		stepname = null;
-		TemplateResourceAnalyzer.setChanged(changed);
+		templateResourceAnalyzer.setChanged(changed);
 		dispose();
 	}
 	
@@ -325,32 +358,34 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 	* @param consumerMeta
 	* @param copyStepname
 	*/
-	private void getData(TemplateResourceAnalyzerMeta TemplateResourceAnalyzer, boolean copyStepname) {
+	private void getData(TemplateResourceAnalyzerMeta templateResourceAnalyzer, boolean copyStepname) {
 		if (copyStepname) {
 			wStepname.setText(stepname);
-			if (TemplateResourceAnalyzer.getDBpedia() != null)
-				wDBpedia.setText(TemplateResourceAnalyzer.getDBpedia());
-			if (TemplateResourceAnalyzer.getTemplate() != null)
-				wTemplate.setText(TemplateResourceAnalyzer.getTemplate());
-			if (TemplateResourceAnalyzer.getBrowseFilename() != null)
-				wBrowse.setText(TemplateResourceAnalyzer.getBrowseFilename());
-			if (TemplateResourceAnalyzer.getResource() != null)
-				wResource.setText(TemplateResourceAnalyzer.getResource());
-			if (TemplateResourceAnalyzer.getOutputFile() != null)
-				wOutputBrowse.setText(TemplateResourceAnalyzer.getOutputFile());
+			if (templateResourceAnalyzer.getDBpedia() != null)
+				wDBpedia.setText(templateResourceAnalyzer.getDBpedia());
+			if (templateResourceAnalyzer.getTemplate() != null)
+				wTemplate.setText(templateResourceAnalyzer.getTemplate());
+			if (templateResourceAnalyzer.getOutputFile() != null)
+				wOutputBrowse.setText(templateResourceAnalyzer.getOutputFile());
+			if (templateResourceAnalyzer.getOutputCSVFile() != null)
+				wOutputCSVBrowse.setText(templateResourceAnalyzer.getOutputCSVFile());
+			if (templateResourceAnalyzer.getOrder() != null)
+				wOrder.setText(templateResourceAnalyzer.getOrder());
+			wGetNotMappedResources.setSelection(templateResourceAnalyzer.getNotMappedResources());
 		}
 	}
 	
 	/**
 	* Copy information from the dialog fields to the meta-data input
 	*/
-	private void setData(TemplateResourceAnalyzerMeta TemplateResourceAnalyzer) {
+	private void setData(TemplateResourceAnalyzerMeta templateResourceAnalyzer) {
 		stepname = wStepname.getText();
-		TemplateResourceAnalyzer.setDBpedia(wDBpedia.getText());
-		TemplateResourceAnalyzer.setTemplate(wTemplate.getText());
-		TemplateResourceAnalyzer.setBrowseFilename(wBrowse.getText());
-		TemplateResourceAnalyzer.setResource(wResource.getText());
-		TemplateResourceAnalyzer.setOutputFile(wOutputBrowse.getText());
-		TemplateResourceAnalyzer.setChanged();
+		templateResourceAnalyzer.setDBpedia(wDBpedia.getText());
+		templateResourceAnalyzer.setTemplate(wTemplate.getText());
+		templateResourceAnalyzer.setOutputFile(wOutputBrowse.getText());
+		templateResourceAnalyzer.setOutputCSVFile(wOutputCSVBrowse.getText());
+		templateResourceAnalyzer.setOrder(wOrder.getText());
+		templateResourceAnalyzer.setNotMappedResources(wGetNotMappedResources.getSelection());
+		templateResourceAnalyzer.setChanged();
 	}
 }

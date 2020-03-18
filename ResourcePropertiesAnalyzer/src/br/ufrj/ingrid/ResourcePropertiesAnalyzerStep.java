@@ -7,7 +7,11 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -43,7 +47,9 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		return super.init(smi, sdi);
 	}
 	
-	public List<String> getProperties(String dbpedia, String template) {
+	public List<String> getProperties() {
+		String dbpedia = meta.getDBpedia();
+		String template = meta.getTemplate();
 		List<String> templateProperties = new ArrayList<>();
 		template = template.replaceAll(" ", "_");
 		try {
@@ -81,8 +87,11 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		}
 	}
 	
-	public List<String> getResourceProperties(String DBpedia, String resource) {
+	public List<String> getResourceProperties() {
 		List<String> resourceProperties = new ArrayList<>();
+		String DBpedia = meta.getDBpedia();
+		String resource = meta.getResource();
+		
 		resource = resource.replace(" ", "_");
 		
 		try {
@@ -92,7 +101,10 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 	
 			for (int i = 0; i < properties.size(); i++) {
 				String resourceProperty = properties.get(i).text();
-				resourceProperties.add(resourceProperty.split(":")[1]);
+				this.logBasic(String.format("Getting the property: %s", resourceProperty.split(":")[1]));
+				if (!resourceProperties.contains(resourceProperty.split(":")[1])) {
+					resourceProperties.add(resourceProperty.split(":")[1]);
+				}
 			}
 			
 		  	return resourceProperties;
@@ -113,28 +125,23 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		return percentage.toString().concat("%");
 	}
 	
-	public List<String> getAllProperties(List<String> templateProperties, List<String> resourceProperties, List<String> missingProperties, List<String> notMapped) {
-		List<String> allProperties = new ArrayList<>();
+	public void getAllProperties() {
+		List<String> templateProperties = data.templateProperties;
+		List<String> resourceProperties = data.resourceProperties;
 		
-		templateProperties.forEach(property -> {
-			if (!allProperties.contains(property)) {
-				allProperties.add(property);
-			}
-			if (!resourceProperties.contains(property)) {
-				missingProperties.add(property);
-			}
-		});
+		Set<String> set = new LinkedHashSet<>(resourceProperties);
+		set.addAll(templateProperties);
 		
-		resourceProperties.forEach(property -> {
-			if (!allProperties.contains(property)) {
-				allProperties.add(property);
-			}
-			if (!templateProperties.contains(property)) {
-				notMapped.add(property);
-			}
-		});
+		List<String> allProperties = new ArrayList<>(set);
+		data.allProperties = allProperties;
 		
-		return allProperties;
+		List<String> missingProperties = new ArrayList<>(templateProperties);
+		missingProperties.removeAll(resourceProperties);
+		data.missingProperties = missingProperties;
+		
+		List<String> notMapped = new ArrayList<>(resourceProperties);
+		notMapped.removeAll(templateProperties);
+		data.notMappedProperties = notMapped;
 	}
 	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -158,16 +165,25 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 			data.outputNotMapedPropertiesIndex = data.outputRowMeta.indexOfValue( "Is property in template?" );
 			data.outputMissingPropertiesIndex = data.outputRowMeta.indexOfValue( "Is property in resource?" );
 			   
-		    data.templateProperties = getProperties(meta.getDBpedia(), meta.getTemplate());
+			this.logBasic("Getting the template properties");
+		    data.templateProperties = getProperties();
 			data.templateProperties.remove(0);
-			data.resourceProperties = getResourceProperties(meta.getDBpedia(), meta.getResource());
-			data.allProperties = getAllProperties(data.templateProperties, data.resourceProperties, data.missingProperties, data.notMappedProperties);
 			
+			this.logBasic("Getting the resources' properties");
+			data.resourceProperties = getResourceProperties();
+			getAllProperties();
+			
+			this.logBasic("Output Files are being written... ");
+			
+			FileWriter CSVwriter;
 			FileWriter writer;
 			try {
+				CSVwriter = new FileWriter(meta.getOutputCSVFile(), true);
+				CSVUtils.writeLine(CSVwriter, Arrays.asList("Property", "Is property in template?", "Is property in resource?"), ',');
+				data.CSVwriter = CSVwriter;
+				
 				writer = new FileWriter(meta.getOutputFile(), true);
 				data.bufferedWriter = new BufferedWriter(writer);
-				 
 	            data.bufferedWriter.write("The result of the analysis was:");
 	            data.bufferedWriter.newLine();
 	            data.bufferedWriter.write(String.format("There are %s properties joining the template's properties and the resource's properties, in which %s are the %s's properties and %s are the %s's properties.", data.allProperties.size(), data.resourceProperties.size(), meta.getResource(), data.templateProperties.size(), meta.getTemplate()));
@@ -178,15 +194,16 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
 			}
-			
-			this.logBasic("Output File is being written... ");
 		}
 		
 		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 3 );
 		
 		if (data.allProperties.size() > 0) {
 			
+			
 			String property = data.allProperties.remove(0);
+			
+			this.logBasic(String.format("Writting the information from the property: %s", property));
 			
 			String isMapped = "Yes";
 			String isInResource = "Yes";
@@ -201,6 +218,8 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 			
 			if ((isInResource.equals("Yes") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties on Resource and Template")) || (isInResource.equals("Yes") && isMapped.equals("No") && meta.getWhichProperty().equals("Properties only on Resource")) || isInResource.equals("No") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties only on Template") || meta.getWhichProperty().equals("All")) {
 				try {
+					CSVUtils.writeLine(data.CSVwriter, Arrays.asList(property, isMapped.toString(), isInResource.toString()), ',');
+					
 					data.bufferedWriter.newLine();
 					data.bufferedWriter.write(String.format("The property %s: Is in %s? %s; Is in %s? %s", property, meta.getTemplate(), isMapped, meta.getResource(), isInResource));
 				} catch (IOException e) {
@@ -218,13 +237,20 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 			return true;
 		}
 		else {
+			
+			this.logBasic("Transformation complete");
+			
 			try {
+				data.CSVwriter.flush();
+		        data.CSVwriter.close();
+		        
 				data.bufferedWriter.close();
-				this.logBasic("Output File was written... ");
+				this.logBasic("Output Files were written... ");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
 			return false;
 		}
 	}

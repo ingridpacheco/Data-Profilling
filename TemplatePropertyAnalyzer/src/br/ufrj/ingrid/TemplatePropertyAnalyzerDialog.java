@@ -4,8 +4,6 @@
 package br.ufrj.ingrid;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
@@ -55,16 +53,35 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 	private Group wInputGroup;
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
-	private ComboVar wProperty;
+	private Button wGetNotMappedResources;
 	
 	private Group wOutputGroup;
-	private ComboVar wResource;
+	private ComboVar wOrder;
 	private TextVar wOutputBrowse;
+	private TextVar wOutputCSVBrowse;
 	
-	private String[] DBpediaValues = {"fr", "ja", "pt"};
+	private String[] DBpediaValues = {
+			"pt", "en", "ja",
+			"ar", "az", "be",
+			"bg", "bn", "ca",
+			"ceb", "Commons", "cs",
+			"cy", "da", "de",
+			"el", "en", "eo",
+			"es", "et", "eu",
+			"fa", "fi", "fr",
+			"ga", "gl", "hi",
+			"hr", "hu", "hy",
+			"id", "it", "ko",
+			"lt", "lv", "mk",
+			"mt", "nl", "pl",
+			"pt", "ru", "ro",
+			"sk", "sl", "sr",
+			"sv", "tr", "uk",
+			"ur", "vi", "war",
+			"zh"
+	};
+	private String[] OrderValues = {"Ascending", "Descending"};
 	private String[] TemplateValues;
-	private String[] PropertyValues;
-	private String[] CheckResources = {"Has property", "Doesn't have property", "All"};
 	
 	
 	public TemplatePropertyAnalyzerDialog(Shell parent, Object in, TransMeta tr, String sname) {
@@ -95,57 +112,13 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		}
 	}
 	
-	public String[] getPropertyValues(String DBpedia, String template) {
-		List<String> templateProperties = new ArrayList<>();
-		template = template.replaceAll(" ", "_");
-		try {
-			String url = String.format("http://mappings.dbpedia.org/index.php/Mapping_%s:%s", DBpedia, template);
-			Document doc = Jsoup.connect(url).get();
-			Elements properties = doc.select("td[width=\"400px\"]");
-			
-			for (int i = 0; i < properties.size(); i++) {
-				String templateProperty = properties.get(i).text();
-				String[] propertyName = templateProperty.split("\\s|_|-");
-	
-			    Integer size = propertyName.length - 1;
-			    Integer counter = 1;
-	
-			    String newString = propertyName[0];
-
-			    while(size > 0){
-			        String newPropertyName = propertyName[counter].substring(0,1).toUpperCase().concat(propertyName[counter].substring(1));
-			        System.out.println(newPropertyName);
-			        newString = newString.concat(newPropertyName);
-			        System.out.println(newString);
-			        counter = counter + 1;
-			        size = size - 1;
-			    }
-
-				templateProperties.add(newString);
-			}
-			
-			templateProperties.remove(0);
-			
-			PropertyValues = templateProperties.toArray(new String[templateProperties.size()]);
-			
-		  	return PropertyValues;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			PropertyValues = new String[1];
-			PropertyValues[0] = "";
-			
-		  	return PropertyValues;
-		}		
-	}
-	
 	private ComboVar appendComboVar(Control lastControl, ModifyListener defModListener, Composite parent,
 			String label) {
 		ComboVar combo = swthlp.appendComboVarRow(parent, lastControl, label, defModListener);
 		BaseStepDialog.getFieldsFromPrevious(combo, transMeta, stepMeta);
 		return combo;
 	}
-	
+
 	private TextVar textVarWithButton(Composite parent, Control lastControl, String label, ModifyListener lsMod,
 			String btnLabel, SelectionListener listener) {
 		int middle = props.getMiddlePct();
@@ -223,40 +196,47 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 				busy.dispose();
 			}
 		});
-			
-		wProperty = appendComboVar(wTemplate, defModListener, wInputGroup,"Property Field");
-		wProperty.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				shell.setCursor(null);
-				wProperty.setItems(getPropertyValues(wDBpedia.getText(), wTemplate.getText()));
-				busy.dispose();
-			}
-		});
+		wGetNotMappedResources = swthlp.appendCheckboxRow(wInputGroup, wTemplate, "Consider resources not mapped in template",
+				new SelectionListener() {
+	            @Override
+	            public void widgetSelected(SelectionEvent arg0)
+	            {
+	            	TemplatePropertyAnalyzer.setChanged();
+	            }
+	
+	            @Override
+	            public void widgetDefaultSelected(SelectionEvent arg0)
+	            {
+	            	TemplatePropertyAnalyzer.setChanged();
+	            }
+        	});
 
 		wOutputGroup = swthlp.appendGroup(shell, wInputGroup, "Output Fields");
-		wResource = appendComboVar(wOutputGroup, defModListener, wOutputGroup,"Show which resources?");
-		wResource.addFocusListener(new FocusListener() {
+		wOrder = appendComboVar(wOutputGroup, defModListener, wOutputGroup,"Show which properties?");
+		wOrder.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
 
 			public void focusGained(FocusEvent e) {
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
+				wOrder.setItems(OrderValues);
 				shell.setCursor(null);
-				wResource.setItems(CheckResources);
 				busy.dispose();
 			}
 		});
-		wOutputBrowse = textVarWithButton(wOutputGroup, wResource, "Report File",
+		wOutputBrowse = textVarWithButton(wOutputGroup, wOrder, "Report File",
 				defModListener, "Search...", new SelectionAdapter() {
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.txt; *.TXT" },
 								wOutputBrowse, new String[] { ".(txt) files" });
+					}
+				});
+		wOutputCSVBrowse = textVarWithButton(wOutputGroup, wOutputBrowse, "CSV File",
+				defModListener, "Search...", new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
+								wOutputCSVBrowse, new String[] { ".(csv) files" });
 					}
 				});
 
@@ -286,7 +266,7 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		formLayout.marginHeight = Const.FORM_MARGIN;
 		
 		shell.setLayout(formLayout);
-		shell.setText("Missing Properties in Template");// Messages.getString(“KafkaTopicPartitionConsumerDialog.Shell.Title”));
+		shell.setText("Template Property Analyzer");// Messages.getString(“KafkaTopicPartitionConsumerDialog.Shell.Title”));
 		
 		int middle = props.getMiddlePct();
 		int margin = Const.MARGIN;
@@ -342,6 +322,9 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		// Set the shell size, based upon previous time…
 		setSize(shell, 200, 150, true);
 		getData(TemplatePropertyAnalyzer, true);
+		// consumerMeta.setChanged(changed);
+		
+		// setTableFieldCombo();
 		
 		shell.open();
 		while (!shell.isDisposed()) {
@@ -382,12 +365,13 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 				wDBpedia.setText(TemplatePropertyAnalyzer.getDBpedia());
 			if (TemplatePropertyAnalyzer.getTemplate() != null)
 				wTemplate.setText(TemplatePropertyAnalyzer.getTemplate());
-			if (TemplatePropertyAnalyzer.getProperty() != null)
-				wProperty.setText(TemplatePropertyAnalyzer.getProperty());
-			if (TemplatePropertyAnalyzer.getResource() != null)
-				wResource.setText(TemplatePropertyAnalyzer.getResource());
 			if (TemplatePropertyAnalyzer.getOutputFile() != null)
 				wOutputBrowse.setText(TemplatePropertyAnalyzer.getOutputFile());
+			if (TemplatePropertyAnalyzer.getOutputCSVFile() != null)
+				wOutputCSVBrowse.setText(TemplatePropertyAnalyzer.getOutputCSVFile());
+			if (TemplatePropertyAnalyzer.getOrder() != null)
+				wOrder.setText(TemplatePropertyAnalyzer.getOrder());
+			wGetNotMappedResources.setSelection(TemplatePropertyAnalyzer.getNotMappedResources());
 		}
 	}
 	
@@ -398,9 +382,10 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		stepname = wStepname.getText();
 		TemplatePropertyAnalyzer.setDBpedia(wDBpedia.getText());
 		TemplatePropertyAnalyzer.setTemplate(wTemplate.getText());
-		TemplatePropertyAnalyzer.setProperty(wProperty.getText());
-		TemplatePropertyAnalyzer.setResource(wResource.getText());
 		TemplatePropertyAnalyzer.setOutputFile(wOutputBrowse.getText());
+		TemplatePropertyAnalyzer.setOutputCSVFile(wOutputCSVBrowse.getText());
+		TemplatePropertyAnalyzer.setOrder(wOrder.getText());
+		TemplatePropertyAnalyzer.setNotMappedResources(wGetNotMappedResources.getSelection());
 		TemplatePropertyAnalyzer.setChanged();
 	}
 }

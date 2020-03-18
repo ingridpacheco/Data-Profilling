@@ -1,6 +1,7 @@
 package br.ufrj.ingrid;
 
 import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -19,6 +20,7 @@ public class ResourcePropertiesAnalyzerData extends BaseStepData implements Step
 	int outputExistingPropertiesIndex = -1;
 	int outputMissingPropertiesIndex = -1;
 	int outputNotMapedPropertiesIndex = -1;
+	int outputCompletenessPercentageIndex = -1;
 	
 	int quantity = 0;
 	
@@ -29,6 +31,7 @@ public class ResourcePropertiesAnalyzerData extends BaseStepData implements Step
 	List<String> allProperties = new ArrayList<>();
 	
 	BufferedWriter bufferedWriter;
+	FileWriter CSVwriter;
 	
 	public ResourcePropertiesAnalyzerData() {
 		super();
