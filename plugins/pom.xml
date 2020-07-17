@@ -33,6 +33,9 @@
 						<configuration>
 							<target name="i18n-hack">
 								<echo message="Copying i18n files"/>
+								<copy overwrite="true" todir="${basedir}/MergeProfiling/src/main/java">
+									<fileset dir="${basedir}/src/main/java" includes="**/*.properties"/>
+								</copy>
 								<copy overwrite="true" todir="${basedir}/InnerProfiling/src/main/java">
 									<fileset dir="${basedir}/src/main/java" includes="**/*.properties"/>
 								</copy>
@@ -201,6 +204,7 @@
 
 	<modules>
 	    <module>InnerProfiling</module>
+	    <module>MergeProfiling</module>
 	    <module>DBpediaTriplification</module>
   </modules>
 </project>

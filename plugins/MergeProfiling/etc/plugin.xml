@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="MergeProfiling"
+   iconfile="iconPropertyAnalyzer.png"
+   description="Merge Profiling"
+   tooltip="Gets the profiling of the input resources with the input database"
+   category="ETL4Profiling"
+   classname="br.ufrj.dcc.kettle.MergeProfiling.MergeProfilingMeta">
+   <libraries>
+		<library name="MergeProfiling.jar"/>
+		<library name="lib/KettlePluginTools-1.0.jar"/>
+		<library name="lib/jena-core-{apache.jena.version}.jar"/>
+		<library name="lib/jena-base-{apache.jena.version}.jar"/>
+		<library name="lib/jena-shaded-guava-{apache.jena.version}.jar"/>
+		<library name="lib/jena-arq-{apache.jena.version}.jar"/>
+		<library name="lib/jena-iri-{apache.jena.version}.jar"/>
+		<library name="lib/libthrift-{apache.libthrift.version}.jar"/>
+		<library name="lib/commons-compress-{apache.commons-compress.version}.jar"/>
+		<library name="lib/xstream-{xstream.version}.jar"/>	
+		<library name="lib/xmlpull-{xmlpull.version}.jar"/><library
+			name="lib/jsoup-1.12.1.jar">
+</library>
+   </libraries>
+    <localized_category>
+     <category locale="en_US">ETL4Profiling</category>
+     <category locale="pt_BR">ETL4Profiling</category>
+   </localized_category>
+   <localized_description>
+     <description locale="en_US">Merge Profiling</description>
+    <description locale="pt_BR">Merge Profiling</description>
+   </localized_description>
+   <localized_tooltip>
+     <tooltip locale="en_US">Gets the profiling of the input resources with the input database</tooltip>
+    <tooltip locale="pt_BR">Pega o profiling dos dados de entrada com a base de dados</tooltip>
+   </localized_tooltip>
+</plugin>
