@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <plugin
    id="MergeProfiling"
-   iconfile="iconPropertyAnalyzer.png"
+   iconfile="iconMergeProfiling.png"
    description="Merge Profiling"
    tooltip="Gets the profiling of the input resources with the input database"
    category="ETL4Profiling"
