@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="TemplateResourceInputAnalyzer"
+   iconfile="iconResourceInputAnalyzer.png"
+   description="Template Resource Input Analyzer"
+   tooltip="Checks the completeness between the input resources and the ones from DBpedia"
+   category="ETL4Profiling"
+   classname="br.ufrj.dcc.kettle.TemplateResourceInputAnalyzer.TemplateResourceInputAnalyzerMeta">
+   <libraries>
+		<library name="TemplateResourceInputAnalyzer.jar"/>
+		<library name="lib/KettlePluginTools-1.0.jar"/>
+		<library name="lib/jena-core-{apache.jena.version}.jar"/>
+		<library name="lib/jena-base-{apache.jena.version}.jar"/>
+		<library name="lib/jena-shaded-guava-{apache.jena.version}.jar"/>
+		<library name="lib/jena-arq-{apache.jena.version}.jar"/>
+		<library name="lib/jena-iri-{apache.jena.version}.jar"/>
+		<library name="lib/libthrift-{apache.libthrift.version}.jar"/>
+		<library name="lib/commons-compress-{apache.commons-compress.version}.jar"/>
+		<library name="lib/xstream-{xstream.version}.jar"/>	
+		<library name="lib/xmlpull-{xmlpull.version}.jar"/><library
+			name="lib/jsoup-1.12.1.jar">
+</library>
+   </libraries>
+    <localized_category>
+     <category locale="en_US">ETL4Profiling</category>
+     <category locale="pt_BR">ETL4Profiling</category>
+   </localized_category>
+   <localized_description>
+     <description locale="en_US">Template Resource Input Analyzer</description>
+    <description locale="pt_BR">Template Resource Input Analyzer</description>
+   </localized_description>
+   <localized_tooltip>
+     <tooltip locale="en_US">Checks the completeness between the input resources and the ones from DBpedia</tooltip>
+    <tooltip locale="pt_BR">Checa a completude entre os recursos inputados e os da DBpedia</tooltip>
+   </localized_tooltip>
+</plugin>
