@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+   id="DBpediaTriplification"
+   iconfile="iconPropertyAnalyzer.png"
+   description="DBpedia Triplification"
+   tooltip="Triplifies the resources of a DBpedia template"
+   category="ETL4Profiling"
+   classname="br.ufrj.dcc.kettle.DBpediaTriplification.DBpediaTriplificationMeta">
+   <libraries>
+		<library name="DBpediaTriplification.jar"/>
+		<library name="lib/KettlePluginTools-1.0.jar"/>
+		<library name="lib/jena-core-{apache.jena.version}.jar"/>
+		<library name="lib/jena-base-{apache.jena.version}.jar"/>
+		<library name="lib/jena-shaded-guava-{apache.jena.version}.jar"/>
+		<library name="lib/jena-arq-{apache.jena.version}.jar"/>
+		<library name="lib/jena-iri-{apache.jena.version}.jar"/>
+		<library name="lib/libthrift-{apache.libthrift.version}.jar"/>
+		<library name="lib/commons-compress-{apache.commons-compress.version}.jar"/>
+		<library name="lib/xstream-{xstream.version}.jar"/>	
+		<library name="lib/xmlpull-{xmlpull.version}.jar"/><library
+			name="lib/jsoup-1.12.1.jar">
+</library>
+   </libraries>
+    <localized_category>
+     <category locale="en_US">ETL4Profiling</category>
+     <category locale="pt_BR">ETL4Profiling</category>
+   </localized_category>
+   <localized_description>
+     <description locale="en_US">DBpedia Triplification</description>
+    <description locale="pt_BR">DBpedia Triplification</description>
+   </localized_description>
+   <localized_tooltip>
+     <tooltip locale="en_US">Triplifies the resources of a DBpedia template</tooltip>
+    <tooltip locale="pt_BR">Triplifica os recursos de um template da DBpedia</tooltip>
+   </localized_tooltip>
+</plugin>
