@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <plugin
    id="TemplateResourceInputAnalyzer"
-   iconfile="iconResourceInputAnalyzer.png"
+   iconfile="iconTemplateResourceInputAnalyzer.png"
    description="Template Resource Input Analyzer"
    tooltip="Checks the completeness between the input resources and the ones from DBpedia"
    category="ETL4Profiling"
