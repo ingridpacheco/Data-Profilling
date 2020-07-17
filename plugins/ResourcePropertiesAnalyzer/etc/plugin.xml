@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <plugin
    id="ResourcePropertiesAnalyzer"
-   iconfile="iconResourceInputAnalyzer.png"
+   iconfile="iconResourcePropertiesAnalyzer.png"
    description="Resource Properties Analyzer"
    tooltip="Checks the properties inside a specified resource on a DBpedia template"
    category="ETL4Profiling"
