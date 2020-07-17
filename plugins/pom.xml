@@ -33,6 +33,9 @@
 						<configuration>
 							<target name="i18n-hack">
 								<echo message="Copying i18n files"/>
+								<copy overwrite="true" todir="${basedir}/ResourcePropertiesAnalyzer/src/main/java">
+									<fileset dir="${basedir}/src/main/java" includes="**/*.properties"/>
+								</copy>
 								<copy overwrite="true" todir="${basedir}/ResourceInputAnalyzer/src/main/java">
 									<fileset dir="${basedir}/src/main/java" includes="**/*.properties"/>
 								</copy>
@@ -209,6 +212,7 @@
 	</dependencies>
 
 	<modules>
+		<module>ResourcePropertiesAnalyzer</module>
 		<module>ResourceInputAnalyzer</module>
 		<module>PropertyAnalyzer</module>
 	    <module>InnerProfiling</module>
