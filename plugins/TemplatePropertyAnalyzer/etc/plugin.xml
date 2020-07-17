@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <plugin
    id="TemplatePropertyAnalyzer"
-   iconfile="iconResourceInputAnalyzer.png"
+   iconfile="iconTemplatePropertyAnalyzer.png"
    description="Template Property Analyzer"
    tooltip="Calculates the completeness percentages of every template's properties"
    category="ETL4Profiling"
