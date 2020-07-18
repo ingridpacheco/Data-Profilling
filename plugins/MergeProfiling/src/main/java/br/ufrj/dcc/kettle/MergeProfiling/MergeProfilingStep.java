@@ -93,17 +93,23 @@ public class MergeProfilingStep extends BaseStep implements StepInterface {
 			
 			//Initialize writing in CSV and TXT files
 			initializeOutputFiles();
+			
+			if (meta.getIsInputCSV()) {
+				readFirstCSVInformation();
+			}
 		}
 		
-		//Get RDF parameters
-		getRdfInformation(inputRow);	
-		
-		Object[] outputRow = inputRow;
-		outputRow[data.outputSubjectIndex] = subject;
-		outputRow[data.outputPredicatesIndex] = predicate;
-		String IsInCSV = (data.inputSubjectsPredicate.get(subject) == null) ? "false" : "true";
-		outputRow[data.outputIsInCSVIndex] = IsInCSV;
-		putRow(data.outputRowMeta, outputRow);
+		if (!meta.getIsInputCSV()) {
+			//Get RDF parameters
+			getRdfInformation(inputRow);	
+			
+			Object[] outputRow = inputRow;
+			outputRow[data.outputSubjectIndex] = subject;
+			outputRow[data.outputPredicatesIndex] = predicate;
+			String IsInCSV = (data.inputSubjectsPredicate.get(subject) == null) ? "false" : "true";
+			outputRow[data.outputIsInCSVIndex] = IsInCSV;
+			putRow(data.outputRowMeta, outputRow);
+		}
 		
 		return true;
 	}
@@ -150,6 +156,40 @@ public class MergeProfilingStep extends BaseStep implements StepInterface {
 					inputPredicate = (row.matches("\\S+[;]\\S+")) ? removeSignals(row.split(";")[1]) : removeSignals(row.split(",")[1]);
 				}
 				data.inputSubjectsPredicate.put(inputSubject, addValueList(data.inputSubjectsPredicate, inputSubject, inputPredicate));
+			}
+			csvReader.close();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void readFirstCSVInformation() {
+		BufferedReader csvReader;
+		try {				
+			csvReader = new BufferedReader(new FileReader(meta.getInputCSVBrowse()));
+			String row;
+			subject = "";
+			while ((row = csvReader.readLine()) != null) {
+				if (subject.equals("")) {
+					row = csvReader.readLine();
+				}
+				if (meta.getInputChoice().equals("N-Triple")) {
+					String[] triples = (row.split(" "));
+					subject = removeSignals(triples[0]);
+					predicate = removeSignals(triples[1]);
+				}
+				else {
+					subject = (row.matches("\\S+[;]\\S+")) ? removeSignals(row.split(";")[0]) : removeSignals(row.split(",")[0]);
+					predicate = (row.matches("\\S+[;]\\S+")) ? removeSignals(row.split(";")[1]) : removeSignals(row.split(",")[1]);
+				}
+				
+				data.predicates.add(predicate);
+				
+				checkSubject();
 			}
 			csvReader.close();
 		} catch (FileNotFoundException e1) {
