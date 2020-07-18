@@ -34,7 +34,7 @@ This project was developed using Eclipse IDE, but it can be used with any other 
 
 1. Download and install Kettle, Pentaho Data Integration (pdi-ce-8.2.0.0-342 or latest version).
 2. Download, install and settup Maven.
-3. Download the [newest version of the plugins](https://github.com/ingridpacheco/ETL4Profiling/releases) and change the variable ``pdi.home`` in the pom of your root project ``plugins`` to the place where your Kettle is installed, and then, run ``mvn clean install`` in your project's root.
+3. Download the [newest version of the plugins](https://github.com/ingridpacheco/ETL4Profiling/releases) and change the variable ``pdi.home`` in the pom of your root project ``plugins`` to the place where your Kettle is installed, and then, run ``mvn clean install`` in your ``plugins`` folder.
 
 ### Creating a new plugin
 
