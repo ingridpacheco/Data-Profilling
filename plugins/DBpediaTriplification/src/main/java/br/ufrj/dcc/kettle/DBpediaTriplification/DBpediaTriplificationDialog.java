@@ -1,7 +1,19 @@
 package br.ufrj.dcc.kettle.DBpediaTriplification;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.sparql.engine.http.QueryEngineHTTP;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
@@ -28,6 +40,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.i18n.BaseMessages;
@@ -55,6 +68,8 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 	private Group wInputGroup;
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
+	private ComboVar wResourceField;
+	private Button wspecifyResource;
 	private Button wGetNotMappedResources;
 	
 	private Group wOutputGroup;
@@ -92,6 +107,128 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 		  	TemplateValues[0] = "";
 		  	return TemplateValues;
 		}
+	}
+	
+	public List<String> getResourceNames(Elements resources, List<String> notMappedResources){
+		this.logBasic("Getting the not mapped resources names");
+		for (int i = 0; i < resources.size(); i++) {
+			if (!resources.get(i).hasAttr("accesskey")) {
+				String resourceName = resources.get(i).text();
+            	
+            	this.logBasic(String.format("Not Mapped Resource: %s",resourceName));
+            	if (!notMappedResources.contains(resourceName)) {
+            		notMappedResources.add(resourceName);
+            	}
+			}
+			else {
+				break;
+			}
+		}
+		
+		return notMappedResources;
+	}
+	
+	public List<String> getNotMappedResources(String DBpedia, String template, List<String> mappedResources) {
+		this.logBasic("Getting the not mapped resources");
+		List<String> notMappedResources = mappedResources;
+		
+		try {
+			String url = String.format("https://tools.wmflabs.org/templatecount/index.php?lang=%s&namespace=10&name=%s#bottom", DBpedia, template);
+			this.logBasic(String.format("Url: %s", url));
+			Document doc = Jsoup.connect(url).get();
+			Integer quantity = Integer.parseInt(doc.select("form + h3 + p").text().split(" ")[0]);
+			this.logBasic(String.format("Quantity %s", quantity));
+			
+			String resourcesUrl = String.format("https://%s.wikipedia.org/wiki/Special:WhatLinksHere/Template:%s?limit=2000&namespace=0", DBpedia, template);
+			Document resourcesDoc = Jsoup.connect(resourcesUrl).get();
+			Elements resources = resourcesDoc.select("li a[href^=\"/wiki/\"]");
+			Element newPage = resourcesDoc.select("p ~ a[href^=\"/w/index.php?\"]").first();
+			
+			this.logBasic(String.format("Not mapped resources: %s", resources.size()));
+			
+			notMappedResources = getResourceNames(resources, notMappedResources);
+			
+			if (quantity > 2000) {
+				Integer timesDivided = quantity/2000;
+				while (timesDivided > 0) {
+					String newUrl = newPage.attr("href");
+					newUrl = newUrl.replaceAll("amp;", "");
+					String otherPageUrl = String.format("https://%s.wikipedia.org%s", DBpedia, newUrl);
+					Document moreResourceDocs = Jsoup.connect(otherPageUrl).get();
+					resources = moreResourceDocs.select("li a[href^=\"/wiki/\"]");
+					newPage = moreResourceDocs.select("p ~ a[href^=\"/w/index.php?\"]").get(1);
+					notMappedResources = getResourceNames(resources, notMappedResources);
+					timesDivided -= 1;
+				}
+			}
+			
+			return notMappedResources;
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return notMappedResources;
+		}
+	}
+	
+	public List<String> getMappedResources(String DBpedia, String Template, List<String> resources) {
+		Map<String, String> mapTemplateUrl = new HashMap<String, String>();
+		mapTemplateUrl.put("pt", "Predefinição");
+		mapTemplateUrl.put("fr", "Modèle");
+		mapTemplateUrl.put("ja", "Template");
+		
+		String templateUrl = String.format("http://%s.dbpedia.org/resource/%s:%s", DBpedia, mapTemplateUrl.get(DBpedia) ,Template);
+		
+		String queryStr =
+				"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+				+ "PREFIX dbp: ?dbpUrl \n"
+				+ "SELECT DISTINCT ?uri ?name WHERE {\n"
+				+ "?uri dbp:wikiPageUsesTemplate ?templateUrl. \n"
+				+ "?uri rdfs:label ?label.filter langMatches(lang(?label), ?language). \n"
+				+ "BIND(STR(?label)AS ?name).} \n";
+		
+		ParameterizedSparqlString pss = new ParameterizedSparqlString();
+		pss.setCommandText(queryStr);
+		pss.setIri("dbpUrl", String.format("http://%s.dbpedia.org/property/", DBpedia));
+		pss.setIri("templateUrl", templateUrl);
+		pss.setLiteral("language", DBpedia);
+		
+		String sparqlUrl = String.format("http://%s.dbpedia.org/sparql", DBpedia);
+				
+        Query query = QueryFactory.create(pss.asQuery());
+
+        try ( QueryExecution qexec = QueryExecutionFactory.sparqlService(sparqlUrl, query) ) {
+            ((QueryEngineHTTP)qexec).addParam("timeout", "10000") ;
+
+            ResultSet rs = qexec.execSelect();
+            
+            while (rs.hasNext()) {
+            	QuerySolution resource = rs.next();
+            	String templateName = resource.getLiteral("name").getString();
+            	resources.add(templateName);
+            }
+//            ResultSetFormatter.out(System.out, rs, query);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resources;
+	}
+	
+	public String[] getResourceValues(String DBpedia, String Template, Boolean hasNotMapped) throws IOException{
+		
+		List<String> templateResources = new ArrayList<>();
+		
+		Template = Template.replace(" ", "_");
+		
+		if (DBpedia.equals("pt") || DBpedia.equals("fr") || DBpedia.equals("ja")) {
+			templateResources = getMappedResources(DBpedia, Template, templateResources);
+		}
+		
+		if (hasNotMapped) {
+			templateResources = getNotMappedResources(DBpedia, Template, templateResources);
+		}
+        
+        return templateResources.toArray(new String[0]);
 	}
 	
 	private ComboVar appendComboVar(Control lastControl, ModifyListener defModListener, Composite parent,
@@ -181,8 +318,25 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 				busy.dispose();
 			}
 		});
+		String specifyResourceLabel = BaseMessages.getString(PKG, "DBpediaTriplificationStep.SpecifyResource.Label");
+		wspecifyResource = swthlp.appendCheckboxRow(wInputGroup, wTemplate, specifyResourceLabel,
+				new SelectionListener() {
+	            @Override
+	            public void widgetSelected(SelectionEvent arg0)
+	            {
+	            	shouldSpecifyResource(wspecifyResource.getSelection());
+	            	DBpediaTriplification.setChanged();
+	            }
+	
+	            @Override
+	            public void widgetDefaultSelected(SelectionEvent arg0)
+	            {
+	            	shouldSpecifyResource(wspecifyResource.getSelection());
+	            	DBpediaTriplification.setChanged();
+	            }
+		});
 		String getNotMappedFieldLabel = BaseMessages.getString(PKG, "DBpediaTriplificationStep.GetNotMappedFields.Label");
-		wGetNotMappedResources = swthlp.appendCheckboxRow(wInputGroup, wTemplate, getNotMappedFieldLabel,
+		wGetNotMappedResources = swthlp.appendCheckboxRow(wInputGroup, wspecifyResource, getNotMappedFieldLabel,
 				new SelectionListener() {
 	            @Override
 	            public void widgetSelected(SelectionEvent arg0)
@@ -196,6 +350,26 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 	            	DBpediaTriplification.setChanged();
 	            }
         	});
+		String resourceLabel = BaseMessages.getString(PKG, "DBpediaTriplificationStep.ResourceLabel.Label");
+		wResourceField = appendComboVar(wGetNotMappedResources, defModListener, wInputGroup, resourceLabel);
+		wResourceField.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				try {
+					wResourceField.setItems(getResourceValues(wDBpedia.getText(),wTemplate.getText(), wGetNotMappedResources.getSelection()));
+				} catch (IOException e1) {
+					String[] resources = new String[0];
+					// TODO Auto-generated catch block
+					wResourceField.setItems(resources);
+				}
+				busy.dispose();
+			}
+		});
 
 		String outputFieldsLabel = BaseMessages.getString(PKG, "DBpediaTriplificationStep.OutputFields.Label");
 		wOutputGroup = swthlp.appendGroup(shell, wInputGroup, outputFieldsLabel);
@@ -209,6 +383,10 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 				});
 
 		return wOutputGroup;
+	}
+	
+	private void shouldSpecifyResource(boolean choice) {
+		wResourceField.setEnabled(choice);
 	}
 	
 	@Override
@@ -340,7 +518,11 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 				wTemplate.setText(DBpediaTriplification.getTemplate());
 			if (DBpediaTriplification.getOutputCSVFile() != null)
 				wOutputCSVBrowse.setText(DBpediaTriplification.getOutputCSVFile());
+			if (DBpediaTriplification.getResource() != null)
+				wResourceField.setText(DBpediaTriplification.getResource());
+			wspecifyResource.setSelection(DBpediaTriplification.getSpecifyResource());
 			wGetNotMappedResources.setSelection(DBpediaTriplification.getNotMappedResources());
+			shouldSpecifyResource(wspecifyResource.getSelection());
 		}
 	}
 	
@@ -353,6 +535,8 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
 		DBpediaTriplification.setTemplate(wTemplate.getText());
 		DBpediaTriplification.setOutputCSVFile(wOutputCSVBrowse.getText());
 		DBpediaTriplification.setNotMappedResources(wGetNotMappedResources.getSelection());
+		DBpediaTriplification.setResource(wResourceField.getText());
+		DBpediaTriplification.setSpecifyResource(wspecifyResource.getSelection());
 		DBpediaTriplification.setChanged();
 	}
 }

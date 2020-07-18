@@ -261,10 +261,17 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
 			}
 			
 			this.logBasic("Getting the tripples");
-		    getDBpediaTriples();
-		    
-		    if (meta.getNotMappedResources() == true) {
-		    	getDBpediaNotMappedResources();
+			
+			if (meta.getSpecifyResource()) {
+				subject = meta.getResource();
+				getResourceProperties();
+			}
+			else {
+				getDBpediaTriples();
+			    
+			    if (meta.getNotMappedResources() == true) {
+			    	getDBpediaNotMappedResources();
+				}
 			}
 		}
 		

@@ -41,9 +41,27 @@ public class DBpediaTriplificationMeta extends BaseStepMeta implements StepMetaI
 	private String template;
 	public String browseOutputCSVFilename;
 	private Boolean notMappedResources;
+	private Boolean specifyResource;
+	private String resource;
 	
 	public DBpediaTriplificationMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public Boolean getSpecifyResource() {
+		return specifyResource;
+	}
+	
+	public void setSpecifyResource(Boolean specifyResource) {
+		this.specifyResource = specifyResource;
+	}
+	
+	public String getResource() {
+		return resource;
+	}
+	
+	public void setResource(String resource) {
+		this.resource = resource;
 	}
 	
 	public String getDBpedia() {
@@ -92,6 +110,7 @@ public class DBpediaTriplificationMeta extends BaseStepMeta implements StepMetaI
 	@Override
 	public void setDefault() {
 		notMappedResources = false;
+		specifyResource = false;
 	// TODO Auto-generated method stub
 	}
 	
@@ -100,6 +119,8 @@ public class DBpediaTriplificationMeta extends BaseStepMeta implements StepMetaI
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
+			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
+			specifyResource = "Y".equals(XMLHandler.getTagValue(stepnode, "SPECIFYRESOURCE"));
 			notMappedResources = "Y".equals(XMLHandler.getTagValue(stepnode, "NOTMAPPEDRESOURCES"));
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
@@ -118,7 +139,11 @@ public class DBpediaTriplificationMeta extends BaseStepMeta implements StepMetaI
 		if (browseOutputCSVFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename));
 		}
+		if (resource != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCE", resource));
+		}
 		retVal.append("    ").append(XMLHandler.addTagValue("NOTMAPPEDRESOURCES", notMappedResources));
+		retVal.append("    ").append(XMLHandler.addTagValue("SPECIFYRESOURCE", specifyResource));
 		return retVal.toString();
 	}
 	
@@ -127,6 +152,8 @@ public class DBpediaTriplificationMeta extends BaseStepMeta implements StepMetaI
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
+			resource = rep.getStepAttributeString(stepId, "RESOURCE");
+			specifyResource = rep.getStepAttributeBoolean(stepId, "SPECIFYRESOURCE");
 			notMappedResources = rep.getStepAttributeBoolean(stepId, "NOTMAPPEDRESOURCES");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
@@ -141,9 +168,14 @@ public class DBpediaTriplificationMeta extends BaseStepMeta implements StepMetaI
 			if (template != null) {
 				rep.saveStepAttribute(transformationId, stepId, "TEMPLATE", template);
 			}
+			if (resource != null) {
+				rep.saveStepAttribute(transformationId, stepId, "RESOURCE", resource);
+			}
 			if (browseOutputCSVFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename);
 			}
+			rep.saveStepAttribute(transformationId, stepId,
+	                "SPECIFYRESOURCE", specifyResource);
 			rep.saveStepAttribute(transformationId, stepId,
 	                "NOTMAPPEDRESOURCES", notMappedResources);
 		} catch (Exception e) {
