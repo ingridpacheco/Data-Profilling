@@ -44,9 +44,27 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 	public String browseOutputFilename;
 	public String browseOutputCSVFilename;
 	private String inputChoice;
+	private String browseInputCSVFilename;
+	private Boolean isInputCSV;
 	
 	public InnerProfilingMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public String getInputCSVBrowse() {
+		return browseInputCSVFilename;
+	}
+	
+	public void setInputCSVBrowse(String browseInputCSVFilename) {
+		this.browseInputCSVFilename = browseInputCSVFilename;
+	}
+	
+	public Boolean getIsInputCSV() {
+		return isInputCSV;
+	}
+	
+	public void setIsInputCSV(Boolean isInputCSV) {
+		this.isInputCSV = isInputCSV;
 	}
 	
 	public String getInputChoice() {
@@ -115,7 +133,7 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 	@Override
 	public void setDefault() {
 		setInputChoice("N-Triple");
-		
+		setIsInputCSV(true);
 	// TODO Auto-generated method stub
 	}
 	
@@ -131,7 +149,9 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 			predicate = XMLHandler.getTagValue(stepnode,"PREDICATE");
 			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
+			browseInputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEINPUTCSVFILENAME");
 			inputChoice = XMLHandler.getTagValue(stepnode, "INPUTCHOICE");
+			isInputCSV = "Y".equals(XMLHandler.getTagValue(stepnode, "ISINPUTCSV"));
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
 		// e);
@@ -155,7 +175,11 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 		if (browseOutputCSVFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename));
 		}
+		if (browseInputCSVFilename != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEINPUTCSVFILENAME", browseInputCSVFilename));
+		}
 		retVal.append("    ").append(XMLHandler.addTagValue("INPUTCHOICE", inputChoice));
+		retVal.append("    ").append(XMLHandler.addTagValue("ISINPUTCSV", isInputCSV));
 		return retVal.toString();
 	}
 	
@@ -167,6 +191,8 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
 			inputChoice = rep.getStepAttributeString(stepId, "INPUTCHOICE");
+			browseInputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEINPUTCSVFILENAME");
+			isInputCSV = rep.getStepAttributeBoolean(stepId, "ISINPUTCSV");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
 		}
@@ -189,8 +215,13 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 			if (browseOutputCSVFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename);
 			}
+			if (browseInputCSVFilename != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSEINPUTCSVFILENAME", browseInputCSVFilename);
+			}
 			rep.saveStepAttribute(transformationId, stepId,
 	                "INPUTCHOICE", inputChoice);
+			rep.saveStepAttribute(transformationId, stepId,
+	                "ISINPUTCSV", isInputCSV);
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error saving step Sample Plug-In from the repository", e);
 		}

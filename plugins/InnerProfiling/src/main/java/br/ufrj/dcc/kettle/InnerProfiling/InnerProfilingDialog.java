@@ -56,6 +56,8 @@ public class InnerProfilingDialog extends BaseStepDialog implements StepDialogIn
 	private SwtHelper swthlp;
 	private String dialogTitle;
 	
+	private Button wIsInputCSV;
+	private TextVar wInputCSVBrowse;
 	private Group wInputGroup;
 	private ComboVar wInputChoice;
 	private ComboVar wNTripleFieldName;
@@ -138,8 +140,33 @@ public class InnerProfilingDialog extends BaseStepDialog implements StepDialogIn
 	private Control buildContents(Control lastControl, ModifyListener defModListener) {
 		String inputGroupLabel = BaseMessages.getString(PKG, "InnerProfilingStep.InputFields.Label");
 		wInputGroup = swthlp.appendGroup(shell, lastControl, inputGroupLabel);
+		String isInputCSVLabel = BaseMessages.getString(PKG, "InnerProfilingStep.isInputCSV.Label");
+		wIsInputCSV = swthlp.appendCheckboxRow(wInputGroup, wInputGroup, isInputCSVLabel,
+				new SelectionListener() {
+	            @Override
+	            public void widgetSelected(SelectionEvent arg0)
+	            {
+	            	shouldInputCSV(wIsInputCSV.getSelection());
+	            	InnerProfiling.setChanged();
+	            }
+	
+	            @Override
+	            public void widgetDefaultSelected(SelectionEvent arg0)
+	            {
+	            	shouldInputCSV(wIsInputCSV.getSelection());
+	            	InnerProfiling.setChanged();
+	            }
+		});
+		String inputCSVLabel = BaseMessages.getString(PKG, "InnerProfilingStep.InputCSVBrowse.Label");
+		wInputCSVBrowse = textVarWithButton(wInputGroup, wIsInputCSV, inputCSVLabel,
+				defModListener, BaseMessages.getString(PKG, "InnerProfilingStep.Btn.Browse"), new SelectionAdapter() {
+					public void widgetSelected(SelectionEvent e) {
+						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
+								wInputCSVBrowse, new String[] { ".(csv) files" });
+					}
+				});
 		String InputChoiceLabel = BaseMessages.getString(PKG, "InnerProfilingStep.InputChoice.Label");
-		wInputChoice = appendComboVar(wInputGroup, defModListener, wInputGroup, InputChoiceLabel);
+		wInputChoice = appendComboVar(wInputCSVBrowse, defModListener, wInputGroup, InputChoiceLabel);
 		wInputChoice.addSelectionListener(new SelectionAdapter() {
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 				widgetSelected(arg0);
@@ -230,6 +257,13 @@ public class InnerProfilingDialog extends BaseStepDialog implements StepDialogIn
 				});
 
 		return wOutputGroup;
+	}
+	
+	private void shouldInputCSV(boolean choice) {
+		wInputChoice.setEnabled(!choice);
+		wNTripleFieldName.setEnabled(!choice);
+		wSubject.setEnabled(!choice);
+		wPredicate.setEnabled(!choice);
 	}
 	
 	private void chooseNTripleOrFields(String choice) {
@@ -410,7 +444,11 @@ public class InnerProfilingDialog extends BaseStepDialog implements StepDialogIn
 			wOutputCSVBrowse.setText(InnerProfiling.getOutputCSVFile());
 		if (InnerProfiling.getInputChoice() != null)
 			wInputChoice.setText(InnerProfiling.getInputChoice());
+		if (InnerProfiling.getInputCSVBrowse() != null)
+			wInputCSVBrowse.setText(InnerProfiling.getInputCSVBrowse());
+		wIsInputCSV.setSelection(InnerProfiling.getIsInputCSV());
 		chooseNTripleOrFields(wInputChoice.getText());
+		shouldInputCSV(true);
 	}
 	
 	/**
@@ -428,6 +466,8 @@ public class InnerProfilingDialog extends BaseStepDialog implements StepDialogIn
 		InnerProfiling.setPredicate(wPredicate.getText());
 		InnerProfiling.setOutputFile(wOutputBrowse.getText());
 		InnerProfiling.setOutputCSVFile(wOutputCSVBrowse.getText());
+		InnerProfiling.setInputCSVBrowse(wInputCSVBrowse.getText());
+		InnerProfiling.setIsInputCSV(wIsInputCSV.getSelection());
 		
 		// close the SWT dialog window
 		InnerProfiling.setChanged();

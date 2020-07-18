@@ -3,7 +3,10 @@
 */
 package br.ufrj.dcc.kettle.InnerProfiling;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,6 +51,38 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 		}
 		
 		return true;
+	}
+	
+	private void readCSVInformation() {
+		BufferedReader csvReader;
+		try {				
+			csvReader = new BufferedReader(new FileReader(meta.getInputCSVBrowse()));
+			String row;
+			subject = "";
+			while ((row = csvReader.readLine()) != null) {
+				if (subject.equals("")) {
+					row = csvReader.readLine();
+				}
+				if (meta.getInputChoice().equals("N-Triple")) {
+					String[] triples = (row.split(" "));
+					subject = removeSignals(triples[0]);
+					predicate = removeSignals(triples[1]);
+				}
+				else {
+					subject = (row.matches("\\S+[;]\\S+")) ? removeSignals(row.split(";")[0]) : removeSignals(row.split(",")[0]);
+					predicate = (row.matches("\\S+[;]\\S+")) ? removeSignals(row.split(";")[1]) : removeSignals(row.split(",")[1]);
+				}
+				
+				getRDFpredicates();
+			}
+			csvReader.close();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -107,15 +142,21 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
 			}
+			
+			if (meta.getIsInputCSV()) {
+				readCSVInformation();
+			}
 		}
-		//Get RDF parameters
-		getRdfInformation(inputRow);	
-		
-		Object[] outputRow = inputRow;
-		outputRow = RowDataUtil.resizeArray(outputRow, 3);
-		outputRow[data.outputSubjectIndex] = subject;
-		outputRow[data.outputPredicatesIndex] = predicate;
-		putRow(data.outputRowMeta, outputRow);
+		if (!meta.getIsInputCSV()) {
+			//Get RDF parameters
+			getRdfInformation(inputRow);	
+			
+			Object[] outputRow = inputRow;
+			outputRow = RowDataUtil.resizeArray(outputRow, 3);
+			outputRow[data.outputSubjectIndex] = subject;
+			outputRow[data.outputPredicatesIndex] = predicate;
+			putRow(data.outputRowMeta, outputRow);
+		}
 		
 		return true;
 	}
@@ -134,6 +175,10 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 			predicate = removeSignals(getInputRowMeta().getString(inputRow, meta.getPredicate(), ""));
 		}
 		
+		getRDFpredicates();
+	}
+		
+	public void getRDFpredicates() {
 		data.subjectsPredicates.put(subject, addValueList(data.subjectsPredicates, subject, predicate));
 		
 		//Remove predicate if it is in the missingPredicates' list of the subject
