@@ -36,6 +36,16 @@ This project was developed using Eclipse IDE, but it can be used with any other 
 2. Download, install and settup Maven.
 3. Download the [newest version of the plugins](https://github.com/ingridpacheco/ETL4Profiling/releases) and change the variable ``pdi.home`` in the pom of your root project ``plugins`` to the place where your Kettle is installed, and then, run ``mvn clean install`` in your project's root.
 
+### Creating a new plugin
+
+To create a new plugin, a specific documentation is available in [HOW TO CREATE A KETTLE PLUGIN](https://github.com/johncurcio/ETL4LODPlus/blob/master/docs/PLUGINS.md) by John Curcio.
+To create a plugin for ETL4Profiling the only modification is in the mvn creation. Instead of ``br.ufrj.ppgi.greco.kettle`` in the groupId, it should be ``br.ufrj.dcc.kettle``.
+
+```
+cd ETL4Profiling/plugins
+$ mvn archetype:generate -DgroupId=br.ufrj.dcc.kettle.NomeDoPlugin -DartifactId=NomeDoPlugin -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+```
+
 ## License
 
 This project uses the MIT license. For more details, read [LICENSE.md](LICENSE).
