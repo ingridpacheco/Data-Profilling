@@ -10,15 +10,15 @@ To use the project, the only need is to [download the newest version of the plug
 
 ETL4Profiling is currently providing the following plugins:
 
-* [InnerProfiling](https://maven.apache.org/)
-* [MergeProfiling](https://sourceforge.net/projects/pentaho/)
-* [DBpediaTriplification](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-* [PropertyAnalyzer](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-* [ResourceInputAnalyzer](https://maven.apache.org/)
-* [ResourcePropertiesAnalyzer](https://sourceforge.net/projects/pentaho/)
-* [TemplatePropertyAnalyzer](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-* [TemplateResourceAnalyzer](https://maven.apache.org/)
-* [TemplateResourceInputAnalyzer](https://sourceforge.net/projects/pentaho/)
+* [InnerProfiling](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/InnerProfiling)
+* [MergeProfiling](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/MergeProfiling)
+* [DBpediaTriplification](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/DBpediaTriplification)
+* [PropertyAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/PropertyAnalyzer)
+* [ResourceInputAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/ResourceInputAnalyzer)
+* [ResourcePropertiesAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/ResourcePropertiesAnalyzer)
+* [TemplatePropertyAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/TemplatePropertyAnalyzer)
+* [TemplateResourceAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/TemplateResourceAnalyzer)
+* [TemplateResourceInputAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/TemplateResourceInputAnalyzer)
 
 ## Development
 
