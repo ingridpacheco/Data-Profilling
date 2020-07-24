@@ -5,12 +5,11 @@ package br.ufrj.dcc.kettle.GetDBpediaData;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
@@ -46,6 +45,8 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 	
 	private GetDBpediaDataData data;
 	private GetDBpediaDataMeta meta;
+	private String type;
+	private String propertyValue;
 	
 	public GetDBpediaDataStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
 		super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
@@ -58,7 +59,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		return super.init(smi, sdi);
 	}
 	
-	public void getResourceNames(Elements resources){
+	public void getResourceNames(Object[] outputRow, Elements resources) throws KettleStepException{
 		this.logBasic("Getting the not mapped resources names");
 		for (int i = 0; i < resources.size(); i++) {
 			if (!resources.get(i).hasAttr("accesskey")) {
@@ -66,6 +67,12 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
             	
             	this.logBasic(String.format("Not Mapped Resource: %s",resourceName));
             	if (!data.dataFound.contains(resourceName)) {
+            		if (meta.getOption().equals("Template resources")) {
+                		writeOutput(outputRow, resourceName);
+                	}
+                	else {
+                		getResourceProperties(resourceName, outputRow);
+                	}
             		data.dataFound.add(resourceName);
             	}
 			}
@@ -75,7 +82,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		}
 	}
 	
-	public void getNotMappedResources() {
+	public void getNotMappedResources(Object[] ouputRow) throws KettleStepException {
 		String DBpedia = meta.getDBpedia();
 		String template = meta.getTemplate();
 		
@@ -93,7 +100,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			
 			this.logBasic(String.format("Not mapped resources: %s", resources.size()));
 			
-			getResourceNames(resources);
+			getResourceNames(ouputRow, resources);
 			
 			if (quantity > 2000) {
 				Integer timesDivided = quantity/2000;
@@ -104,7 +111,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 					Document moreResourceDocs = Jsoup.connect(otherPageUrl).get();
 					resources = moreResourceDocs.select("li a[href^=\"/wiki/\"]");
 					newPage = moreResourceDocs.select("p ~ a[href^=\"/w/index.php?\"]").get(1);
-					getResourceNames(resources);
+					getResourceNames(ouputRow, resources);
 					timesDivided -= 1;
 				}
 			}
@@ -115,9 +122,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		}
 	}
 	
-	public List<String> getProperties() {
-		List<String> templateProperties = new ArrayList<>();
-		
+	public void getProperties(Object[] outputRow) throws KettleStepException {
 		try {
 			String url = String.format("http://mappings.dbpedia.org/index.php/Mapping_%s:%s", meta.getDBpedia(), meta.getTemplate().replaceAll(" ", "_"));
 			Document doc = Jsoup.connect(url).get();
@@ -139,31 +144,27 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			        size = size - 1;
 			    }
 			    
-				templateProperties.add(newString);
+			    writeOutput(outputRow, newString);
 			}
-			
-		  	return templateProperties;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			
-		  	return templateProperties;
 		}
 	}
 	
-	public void getResourceProperties(String resource) {
+	public void getResourceProperties(String resource, Object[] outputRow) throws KettleStepException {
 		String DBpedia = meta.getDBpedia();
 		
 		try {
 			String url = String.format("http://%s.dbpedia.org/resource/%s", DBpedia, resource.replace(" ", "_"));
 			Document doc = Jsoup.connect(url).get();
 			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
+			Elements values = doc.select(String.format("label[class=\"c1\"]:has(a[href^=\"http://%s.dbpedia.org/property\"]) + div[class^=\"c2 value\"]", DBpedia));
 	
 			for (int i = 0; i < properties.size(); i++) {
 				String resourceProperty = properties.get(i).text().split(":")[1];
-				if (!data.resourceProperties.contains(resourceProperty)) {
-					data.resourceProperties.add(resourceProperty);
-				}
+				String propertyValue = values.get(i).text();
+				outputResource(outputRow, resource, resourceProperty, propertyValue);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -171,16 +172,49 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		}
 	}
 	
-	public void getResources() {
+	private void outputResource(Object[] outputRow, String resource, String property, String value) throws KettleStepException {
+		if (value.matches("^(dbr\\W).*$") && value.contains(" ")) {
+			String[] objects = value.split(" ");
+			for (String obj : objects) {
+				formatValue(obj);
+				writeResourceProperty(outputRow, resource, property, propertyValue, type);
+			}
+		}
+		else {
+			formatValue(value);
+			writeResourceProperty(outputRow, resource, property, propertyValue, type);
+		}
+	}
+	
+	private void formatValue(String value) {
+		if (value.matches("^(xsd\\W).*$")) {
+			String[] literalValue = value.split("xsd\\W")[1].split(" ");
+			propertyValue = literalValue[1];
+			type = literalValue[0];
+		}
+		else {
+			if (Pattern.matches("^(dbr\\W).*$", value) || value.matches("(.*)resource(.*)")) {
+				String expression = Pattern.matches("^(dbr\\W).*$", value) ? "dbr\\W" : "resource/";
+				propertyValue = value.split(expression)[1];
+				type = "object";
+			}
+			else {
+				propertyValue = value;
+				type = "string";
+			}	
+		}
+	}
+	
+	public void getResources(Object[] outputRow) {
 		Map<String, String> mapTemplateUrl = new HashMap<String, String>();
 		mapTemplateUrl.put("pt", "Predefinição");
 		mapTemplateUrl.put("fr", "Modèle");
 		mapTemplateUrl.put("ja", "Template");
 		
-		getSparqlResources(mapTemplateUrl.get(meta.getDBpedia()));
+		getSparqlResources(outputRow, mapTemplateUrl.get(meta.getDBpedia()));
 	}
 	
-	private void getSparqlResources(String templateDefinition) {
+	private void getSparqlResources(Object[] outputRow, String templateDefinition) {
 		String DBpedia = meta.getDBpedia();
 		String template = meta.getTemplate().replace(" ", "_");
 		String templateUrl = String.format("http://%s.dbpedia.org/resource/%s:%s", DBpedia, templateDefinition, template);
@@ -216,8 +250,13 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
             	QuerySolution resource = rs.next();
             	String resourceName = resource.getLiteral("name").getString();
             	this.logBasic(String.format("Resource: %s", resourceName));
+            	if (meta.getOption().equals("Template resources")) {
+            		writeOutput(outputRow, resourceName);
+            	}
+            	else {
+            		getResourceProperties(resourceName, outputRow);
+            	}
             	data.dataFound.add(resourceName);
-            	
             	if (limit == 0) {
             		TimeUnit.MINUTES.sleep(3);
             		limit = 500;
@@ -241,7 +280,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 					CSVUtils.writeLine(CSVwriter, Arrays.asList("DBpedia Version", "Template", "Resource"), ',');
 				}
 				else {
-					CSVUtils.writeLine(CSVwriter, Arrays.asList("DBpedia Version", "Template", "Property", "Resource"), ',');
+					CSVUtils.writeLine(CSVwriter, Arrays.asList("DBpedia Version", "Template", "Property", "Resource", "Value", "Type"), ',');
 				}
 			}
 			data.CSVwriter = CSVwriter;
@@ -251,18 +290,11 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		}
 	}
 	
-	private boolean writeResourceProperties(Object[] outputRow) throws KettleStepException {
-		if (data.dataFound.size() > 0 || data.resourceProperties.size() > 0) {
-			if (data.resourceProperties.size() == 0) {
-				data.resourceName = data.dataFound.remove(0);
-				getResourceProperties(data.resourceName);
-			}
-			String property = data.resourceProperties.remove(0);
-			
-			this.logBasic(String.format("Writting the information from: %s", data.resourceName));
+	private void writeResourceProperty(Object[] outputRow, String resourceName, String property, String value, String type) throws KettleStepException {			
+			this.logBasic(String.format("Writting the information from: %s", resourceName));
 			
 			try {
-            	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), property, data.resourceName), ',');
+            	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), property, resourceName, value, type), ',');
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -271,34 +303,15 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			outputRow[data.outputPropertyIndex] = property;
 			outputRow[data.outputTemplateIndex] = meta.getTemplate();
 			outputRow[data.outputDBpediaVersion] = meta.getDBpedia();
-			outputRow[data.outputResourceIndex] = data.resourceName;
+			outputRow[data.outputResourceIndex] = resourceName;
+			outputRow[data.outputValueIndex] = value;
+			outputRow[data.outputTypeIndex] = type;
 			
 			putRow(data.outputRowMeta, outputRow);
-			
-			return true;
-		}
-		else {
-			
-			this.logBasic("Transformation complete");
-			
-			try {
-				data.CSVwriter.flush();
-		        data.CSVwriter.close();
-				this.logBasic("Output Files were written... ");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			setOutputDone();
-			return false;
-		}
 	}
 	
-	private boolean writeOutput(Object[] outputRow) throws KettleStepException {
-		if (data.dataFound.size() > 0) {
-			String dataName = data.dataFound.remove(0);
-			
+	private void writeOutput(Object[] outputRow, String dataName) throws KettleStepException {
+		
 			this.logBasic(String.format("Writting the information from: %s", dataName));
 			
 			try {
@@ -318,23 +331,6 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			outputRow[data.outputTemplateIndex] = meta.getTemplate();
 			outputRow[data.outputDBpediaVersion] = meta.getDBpedia();
 			putRow(data.outputRowMeta, outputRow);
-			
-			return true;
-		}
-		else {
-			this.logBasic("Transformation complete");
-			
-			try {
-				data.CSVwriter.flush();
-		        data.CSVwriter.close();
-				this.logBasic("Output Files were written... ");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			setOutputDone();
-			return false;
-		}
 	}
 	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -342,6 +338,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		data = (GetDBpediaDataData) sdi;
 		
 		Object[] inputRow = getRow(); // get row, blocks when needed!
+		Object[] outputRow;
 		
 		if (inputRow == null) // no more input to be expected…
 		{
@@ -358,51 +355,55 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			data.outputTemplateIndex = data.outputRowMeta.indexOfValue( "Template" );
 			data.outputDBpediaVersion = data.outputRowMeta.indexOfValue( "DBpedia Version" );
 			data.outputResourceIndex = data.outputRowMeta.indexOfValue( "Resource" );
+			if (meta.getOption().equals("Template resources properties") || meta.getOption().equals("Resource properties")) {
+				data.outputValueIndex = data.outputRowMeta.indexOfValue( "Value" );
+				data.outputTypeIndex = data.outputRowMeta.indexOfValue( "Type" );
+			}
+			
+			this.logBasic("Initializing output fields");
+			
+			initializeOutputFiled();
 		      
 			this.logBasic("Getting the template properties' informations");
 			
 			this.logBasic(meta.getOption());
 			if (meta.getOption().equals("Template properties")) {
 				this.logBasic("Getting properties");
-				data.dataFound = getProperties();
+				outputRow = RowDataUtil.resizeArray( inputRow, 3 );
+				getProperties(outputRow);
 			}
 			else {
 				if (meta.getOption().equals("Resource properties")) {
-					data.dataFound.add(meta.getResource());
+					outputRow = RowDataUtil.resizeArray( inputRow, 6 );
+					getResourceProperties(meta.getResource(), outputRow);
 				}
 				else {
+					outputRow = (meta.getOption().equals("Template resources")) ? RowDataUtil.resizeArray( inputRow, 3 ) : RowDataUtil.resizeArray( inputRow, 6 );
 					if (meta.getDBpedia().equals("pt") || meta.getDBpedia().equals("fr") || meta.getDBpedia().equals("ja")) {
 				    	this.logBasic("Getting the resources");
-				    	getResources();
+				    	getResources(outputRow);
 				    }
 				    if (meta.getNotMappedResources() == true) {
 				    	this.logBasic("Getting not mapped resources");
-						getNotMappedResources();
+						getNotMappedResources(outputRow);
 					}
 				}
 			}
 			
-			initializeOutputFiled();
-			
+		}
+		this.logBasic("Transformation complete");
+		
+		try {
+			data.CSVwriter.flush();
+	        data.CSVwriter.close();
+			this.logBasic("Output Files were written... ");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		Object[] outputRow;
-			    
-		if (meta.getOption().equals("Template properties")) {
-			outputRow = RowDataUtil.resizeArray( inputRow, 3 );
-			return writeOutput(outputRow);
-		}
-		else {
-			if (meta.getOption().equals("Template resources")) {
-				outputRow = RowDataUtil.resizeArray( inputRow, 3 );
-				return writeOutput(outputRow);
-				
-			}
-			else {
-				outputRow = RowDataUtil.resizeArray( inputRow, 4 );
-				return writeResourceProperties(outputRow);
-			}
-		}
+		setOutputDone();
+		return false;
 	}
 
 	public void dispose(StepMetaInterface smi, StepDataInterface sdi) {

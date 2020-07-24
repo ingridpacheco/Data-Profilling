@@ -210,6 +210,18 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 			ResourceMeta.setOrigin(origin);
 			rowMeta.addValueMeta(ResourceMeta);
 		}
+		
+		if (!option.equals("Template properties") && !option.equals("Template resources")) {
+			ValueMetaInterface ValueMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+			ValueMeta.setName("Value");
+			ValueMeta.setOrigin(origin);
+			rowMeta.addValueMeta(ValueMeta);
+			
+			ValueMetaInterface TypeMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+			TypeMeta.setName("Type");
+			TypeMeta.setOrigin(origin);
+			rowMeta.addValueMeta(TypeMeta);
+		}
 	}
 	
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev, String input[], String output[], RowMetaInterface info) {
