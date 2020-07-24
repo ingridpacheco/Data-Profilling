@@ -375,6 +375,8 @@ public class TemplateResourceInputAnalyzerStep extends BaseStep implements StepI
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			setOutputDone();
 			return false;
 		}
 	}
