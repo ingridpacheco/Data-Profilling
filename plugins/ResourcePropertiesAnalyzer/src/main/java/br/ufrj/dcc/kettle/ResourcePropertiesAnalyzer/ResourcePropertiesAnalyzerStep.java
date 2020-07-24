@@ -249,6 +249,7 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 				e.printStackTrace();
 			}
 			
+			setOutputDone();
 			return false;
 		}
 	}

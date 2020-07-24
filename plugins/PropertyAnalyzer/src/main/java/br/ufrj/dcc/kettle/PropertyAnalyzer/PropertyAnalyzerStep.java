@@ -299,6 +299,7 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 				e.printStackTrace();
 			}
 			
+			setOutputDone();
 			return false;
 		}
 	}

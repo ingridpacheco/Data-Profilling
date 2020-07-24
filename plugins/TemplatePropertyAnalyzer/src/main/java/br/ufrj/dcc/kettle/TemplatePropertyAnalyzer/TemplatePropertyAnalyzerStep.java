@@ -489,6 +489,7 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 			
 			putRow(data.outputRowMeta, outputRow);
 			
+			setOutputDone();
 			return false;
 		}
 	}

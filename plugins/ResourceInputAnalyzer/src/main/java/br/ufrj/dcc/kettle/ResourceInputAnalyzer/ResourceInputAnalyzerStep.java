@@ -219,6 +219,8 @@ public class ResourceInputAnalyzerStep extends BaseStep implements StepInterface
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			setOutputDone();
 			return false;
 		}
 	}

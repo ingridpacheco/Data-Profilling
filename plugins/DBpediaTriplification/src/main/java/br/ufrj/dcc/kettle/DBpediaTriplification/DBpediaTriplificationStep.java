@@ -307,6 +307,7 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
 				e.printStackTrace();
 			}
 			
+			setOutputDone();
 			return false;
 		}
 	}

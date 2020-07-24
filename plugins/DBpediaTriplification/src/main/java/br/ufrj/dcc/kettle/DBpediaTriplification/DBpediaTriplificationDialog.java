@@ -207,7 +207,6 @@ public class DBpediaTriplificationDialog extends BaseStepDialog implements StepD
             	String templateName = resource.getLiteral("name").getString();
             	resources.add(templateName);
             }
-//            ResultSetFormatter.out(System.out, rs, query);
         } catch (Exception e) {
             e.printStackTrace();
         }
