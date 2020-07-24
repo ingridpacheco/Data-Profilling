@@ -230,5 +230,6 @@
 	    <module>InnerProfiling</module>
 	    <module>MergeProfiling</module>
 	    <module>DBpediaTriplification</module>
+    <module>GetDBpediaData</module>
   </modules>
 </project>
