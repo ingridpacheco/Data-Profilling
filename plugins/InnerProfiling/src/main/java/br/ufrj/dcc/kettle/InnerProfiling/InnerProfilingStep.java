@@ -128,7 +128,7 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 			FileWriter writer;
 			try {
 				CSVwriter = new FileWriter(meta.getOutputCSVFile(), true);
-				CSVUtils.writeLine(CSVwriter, Arrays.asList("Subject", "Missing Predicates", "Completeness Percentage"), ',');
+				CSVUtils.writeLine(CSVwriter, Arrays.asList("Subject", "Missing Predicates", "Qtd. Predicates", "Qtd. Missing Predicates", "Completeness Percentage"), ',');
 				data.CSVwriter = CSVwriter;
 				
 				writer = new FileWriter(meta.getOutputFile(), true);
@@ -164,7 +164,7 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 	public void getRdfInformation(Object[] inputRow) throws KettleValueException {
 		
 		if (meta.getInputChoice().equals("N-Triple")) {
-			String[] tripleParameters = getInputRowMeta().getString(inputRow, meta.getNTripleFieldName(), "").split(" ");;
+			String[] tripleParameters = getInputRowMeta().getString(inputRow, meta.getNTripleFieldName(), "").split(" ");
 			
 			//Add predicate in subjects list
 			subject = removeSignals(tripleParameters[0]);
@@ -211,7 +211,7 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 			
 			//Calculates the completeness percentage of the subject
 			Integer completenessPercentage = getCompletenessPercentage(data.subjectsPredicates.get(subject));
-			CSVUtils.writeLine(data.CSVwriter, Arrays.asList(subject, predicateString, completenessPercentage.toString()), ',');
+			CSVUtils.writeLine(data.CSVwriter, Arrays.asList(subject, predicateString, String.valueOf(data.subjectsPredicates.get(subject).size()), String.valueOf(subjectPredicates.size()), completenessPercentage.toString()), ',');
 			data.bufferedWriter.newLine();
 			if (subjectPredicates.size() > 0) {
 				data.bufferedWriter.write(String.format("The subject %s could become more complete with this predicates: %s.", subject, predicateString));

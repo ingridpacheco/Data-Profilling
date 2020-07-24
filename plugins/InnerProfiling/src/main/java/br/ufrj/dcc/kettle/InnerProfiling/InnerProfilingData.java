@@ -16,7 +16,7 @@ import org.pentaho.di.trans.step.StepDataInterface;
 
 public class InnerProfilingData extends BaseStepData implements StepDataInterface {
 
-public RowMetaInterface outputRowMeta;
+	public RowMetaInterface outputRowMeta;
 	
 	int outputSubjectIndex = -1;
 	int outputPredicatesIndex = -1;
