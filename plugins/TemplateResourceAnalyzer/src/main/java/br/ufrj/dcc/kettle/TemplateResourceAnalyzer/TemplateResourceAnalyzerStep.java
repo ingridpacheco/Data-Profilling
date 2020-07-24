@@ -31,7 +31,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowDataUtil;
+import org.pentaho.di.core.row.RowMeta;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -346,7 +348,6 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 			data.bufferedWriter = new BufferedWriter(writer);
             data.bufferedWriter.write("The result of the analysis was:");
             data.bufferedWriter.newLine();
-            data.bufferedWriter.write(String.format("There are %s resources inside %s. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size(), meta.getTemplate()));
             
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
@@ -354,21 +355,54 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		}
 	}
 	
-	private void writeOutput(Object[] outputRow) throws KettleStepException {
-		String resourceName = data.resources.remove(0);
+	private boolean writeFinalOutput(Object[] inputRow) throws KettleStepException {
+		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 5 );
+		
+		if (data.resources.size() > 0) {
+			writeOutput(outputRow, data.resources.remove(0));
+			return true;
+		}
+		else {
+			Float percentage = getPercentage(data.totalResourcesExistingProperties, data.totalResourcesNotMappedProperties, data.templateProperties.size()*data.quantity);
+			outputRow[data.outputResourcesIndex] = "Total";
+			outputRow[data.outputExistingPropertiesIndex] = data.totalResourcesExistingProperties;
+			outputRow[data.outputMissingPropertiesIndex] = data.totalResourcesMissingProperties;
+			outputRow[data.outputTotalIndex] = data.templateProperties.size() * data.quantity;
+			outputRow[data.outputPercentageIndex] = percentage;
+			this.logBasic("Transformation complete");
+			try {
+				CSVUtils.writeLine(data.CSVwriter, Arrays.asList("Total", data.totalResourcesExistingProperties.toString(), data.totalResourcesMissingProperties.toString(), String.format("%s", data.templateProperties.size() * data.quantity), percentage.toString()), ',');
+				data.CSVwriter.flush();
+		        data.CSVwriter.close();
+		        
+		        data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("To sum up, there are %s resource that has %s properties, in which %s template properties are not in it, and %s properties are not mapped in the template. The completeness percentage of the template is %s", data.quantity, data.totalResourcesExistingProperties, data.totalResourcesMissingProperties, data.totalResourcesNotMappedProperties, percentage));
+				data.bufferedWriter.close();
+				this.logBasic("Output Files were written.");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			putRow(data.outputRowMeta, outputRow);
+			setOutputDone();
+			return false;
+		}
+	}
+	
+	private void writeOutput(Object[] outputRow, String resourceName) throws KettleStepException {
 		this.logBasic(String.format("Writting the information from the resource: %s", resourceName));
-		data.percentage = data.resourcesCompletenessPercentage.get(resourceName);
+		Float percentage = data.resourcesCompletenessPercentage.get(resourceName);
 		data.totalResourcesExistingProperties = data.totalResourcesExistingProperties + data.resourcesExistingProperties.get(resourceName);
 		data.totalResourcesNotMappedProperties = data.totalResourcesNotMappedProperties + data.resourcesNotMappedProperties.get(resourceName);
 		data.totalResourcesMissingProperties = data.totalResourcesMissingProperties + data.resourcesMissingProperties.get(resourceName);
 		
         try {
-        	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resourceName, data.resourcesExistingProperties.get(resourceName).toString(), data.resourcesMissingProperties.get(resourceName).toString(), String.format("%s", data.templateProperties.size()), data.percentage.toString()), ',');
+        	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resourceName, data.resourcesExistingProperties.get(resourceName).toString(), data.resourcesMissingProperties.get(resourceName).toString(), String.format("%s", data.templateProperties.size()), percentage.toString()), ',');
 
         	data.bufferedWriter.newLine();
 			data.bufferedWriter.write(String.format("The resource %s has %s properties, in which %s template properties are not in it, and %s properties are not mapped in the template.", resourceName, data.resourcesExistingProperties.get(resourceName), data.resourcesMissingProperties.get(resourceName), data.resourcesNotMappedProperties.get(resourceName)));
 			data.bufferedWriter.newLine();
-			data.bufferedWriter.write(String.format("As the template has %s properties, it leads to a completude percentage of %s.", data.templateProperties.size(), data.percentage));
+			data.bufferedWriter.write(String.format("As the template has %s properties, it leads to a completude percentage of %s.", data.templateProperties.size(), percentage));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -378,9 +412,24 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		outputRow[data.outputExistingPropertiesIndex] = data.resourcesExistingProperties.get(resourceName);
 		outputRow[data.outputMissingPropertiesIndex] = data.resourcesMissingProperties.get(resourceName);
 		outputRow[data.outputTotalIndex] = data.templateProperties.size();
-		outputRow[data.outputPercentageIndex] = data.percentage;
+		outputRow[data.outputPercentageIndex] = percentage;
 		
 		putRow(data.outputRowMeta, outputRow);
+	}
+	
+	private void getResourceCompleteness(Object[] inputRow) throws KettleValueException {
+		String[] templateProperties = getInputRowMeta().getString(inputRow, meta.getTemplateProperties(), "").split(", ");
+		data.templateProperties = new ArrayList<String>(Arrays.asList(templateProperties));
+		String resource = getInputRowMeta().getString(inputRow, meta.getResource(), "");
+		String[] resourcesProperties = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "").split(", ");
+		data.resourcesExistingProperties.put(resource, resourcesProperties.length);
+		List<String> missingProperties = getMissingProperties(Arrays.asList(resourcesProperties), Arrays.asList(templateProperties));
+		data.resourcesMissingProperties.put(resource, missingProperties.size());
+		List<String> notMappedProperties = getNotMappedProperties(Arrays.asList(resourcesProperties), Arrays.asList(templateProperties));
+		data.resourcesNotMappedProperties.put(resource, notMappedProperties.size());
+		Float completeness = getPercentage(data.resourcesExistingProperties.get(resource) , data.resourcesNotMappedProperties.get(resource), data.templateProperties.size());
+		data.resourcesCompletenessPercentage.put(resource, completeness);
+		insert(resource, data, meta.getOrder());
 	}
 	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -391,6 +440,47 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		
 		if (inputRow == null) // no more input to be expected…
 		{
+			if (meta.getChooseInput().equals("Previous fields input")) {
+			
+				Object[] outputRow = new Object[5];
+				
+				initializeOutputFiles();
+				try {
+					data.bufferedWriter.write(String.format("There are %s resources inside %s. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size(), meta.getTemplate()));
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				data.quantity = data.resources.size();
+				
+				for (String resource : data.resources) {
+					
+					writeOutput(outputRow, resource);
+				}
+				
+				Float percentage = getPercentage(data.totalResourcesExistingProperties, data.totalResourcesNotMappedProperties, data.templateProperties.size()*data.quantity);
+				outputRow[data.outputResourcesIndex] = "Total";
+				outputRow[data.outputExistingPropertiesIndex] = data.totalResourcesExistingProperties;
+				outputRow[data.outputMissingPropertiesIndex] = data.totalResourcesMissingProperties;
+				outputRow[data.outputTotalIndex] = data.templateProperties.size() * data.quantity;
+				outputRow[data.outputPercentageIndex] = percentage;
+				this.logBasic("Transformation complete");
+				try {
+					CSVUtils.writeLine(data.CSVwriter, Arrays.asList("Total", data.totalResourcesExistingProperties.toString(), data.totalResourcesMissingProperties.toString(), String.format("%s", data.templateProperties.size() * data.quantity), percentage.toString()), ',');
+					data.CSVwriter.flush();
+			        data.CSVwriter.close();
+			        
+			        data.bufferedWriter.newLine();
+					data.bufferedWriter.write(String.format("To sum up, there are %s resource that has %s properties, in which %s template properties are not in it, and %s properties are not mapped in the template. The completeness percentage of the template is %s", data.quantity, data.totalResourcesExistingProperties, data.totalResourcesMissingProperties, data.totalResourcesNotMappedProperties, percentage));
+					data.bufferedWriter.close();
+					this.logBasic("Output Files were written.");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				putRow(data.outputRowMeta, outputRow);
+			}
+			
 			setOutputDone();
 			return false;
 		}
@@ -398,7 +488,8 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 	
 		if (first) {
 			first = false;
-			data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
+			
+			data.outputRowMeta = meta.getChooseInput().equals("Previous fields input") ? new RowMeta() : (RowMetaInterface) getInputRowMeta().clone();
 			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
 			
 			data.outputResourcesIndex = data.outputRowMeta.indexOfValue( "Resources" );
@@ -406,52 +497,61 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 			data.outputMissingPropertiesIndex = data.outputRowMeta.indexOfValue( "Missing Properties" );
 			data.outputTotalIndex = data.outputRowMeta.indexOfValue( "Total" );
 			data.outputPercentageIndex = data.outputRowMeta.indexOfValue( "Completeness Percentage (%)" );
-		      
+			
 			this.logBasic("Getting the template properties");
-		    data.templateProperties = getProperties();
-			data.templateProperties.remove(0);
 			
-			getDBpediaResources();
-			
-			this.logBasic("Sorting the resources");
-			
-			orderResources();
+			if (!meta.getChooseInput().equals("Previous fields input")) {
+				
+				this.logBasic("Getting the template properties");
+			    data.templateProperties = getProperties();
+				
+				data.templateProperties.remove(0);
+				
+				getDBpediaResources();
+				
+				this.logBasic("Sorting the resources");
+				
+				orderResources();
+				
+				initializeOutputFiles();
+				
+				try {
+					data.bufferedWriter.write(String.format("There are %s resources inside %s. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size(), meta.getTemplate()));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			
 			this.logBasic("Output Files are being written... ");
-			
-			initializeOutputFiles();
 		}
 		
-		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 5 );
-		
-		if (data.resources.size() > 0) {
-			
-			writeOutput(outputRow);
-			return true;
+		if (!meta.getChooseInput().equals("Previous fields input")) {
+			return writeFinalOutput(inputRow);
 		}
 		else {
-			data.percentage = getPercentage(data.totalResourcesExistingProperties, data.totalResourcesNotMappedProperties, data.templateProperties.size()*data.quantity);
-			outputRow[data.outputResourcesIndex] = "Total";
-			outputRow[data.outputExistingPropertiesIndex] = data.totalResourcesExistingProperties;
-			outputRow[data.outputMissingPropertiesIndex] = data.totalResourcesMissingProperties;
-			outputRow[data.outputTotalIndex] = data.templateProperties.size() * data.quantity;
-			outputRow[data.outputPercentageIndex] = data.percentage;
-			this.logBasic("Transformation complete");
-			try {
-				CSVUtils.writeLine(data.CSVwriter, Arrays.asList("Total", data.totalResourcesExistingProperties.toString(), data.totalResourcesMissingProperties.toString(), String.format("%s", data.templateProperties.size() * data.quantity), data.percentage.toString()), ',');
-				data.CSVwriter.flush();
-		        data.CSVwriter.close();
-		        
-		        data.bufferedWriter.newLine();
-				data.bufferedWriter.write(String.format("To sum up, there are %s resource that has %s properties, in which %s template properties are not in it, and %s properties are not mapped in the template. The completeness percentage of the template is %s", data.quantity, data.totalResourcesExistingProperties, data.totalResourcesMissingProperties, data.totalResourcesNotMappedProperties, data.percentage));
-				data.bufferedWriter.close();
-				this.logBasic("Output Files were written.");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return false;
+			getResourceCompleteness(inputRow);
+			return true;
 		}
+	}
+	
+	public static void insert(String resource, TemplateResourceAnalyzerData data, String order){
+		Map<String, Float> sortedList = new HashMap<>();
+		
+		if (order.equals("Ascending")) {
+			sortedList = data.resourcesCompletenessPercentage.entrySet().stream()
+				       .sorted(Map.Entry.comparingByValue())
+				       .collect(Collectors.toMap(
+				          Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+		}
+		else {
+			sortedList = data.resourcesCompletenessPercentage.entrySet().stream()
+				       .sorted((Map.Entry.<String, Float>comparingByValue().reversed()))
+				       .collect(Collectors.toMap(
+				          Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+		}
+		data.resourcesCompletenessPercentage = sortedList;
+		data.resources = new ArrayList<>(sortedList.keySet());
 	}
 
 	public void dispose(StepMetaInterface smi, StepDataInterface sdi) {

@@ -34,9 +34,10 @@ public class TemplateResourceAnalyzerData extends BaseStepData implements StepDa
 	Map<String,Integer> resourcesNotMappedProperties = new HashMap<>();
 	Map<String,Integer> resourcesMissingProperties = new HashMap<>();
 	
+	String DBpediaVersion = "";
+	String template = "";
 	BufferedWriter bufferedWriter;
 	FileWriter CSVwriter;
-	Float percentage = (float) 0;
 	Integer quantity = 0;
 	
 	Integer totalResourcesExistingProperties = 0;

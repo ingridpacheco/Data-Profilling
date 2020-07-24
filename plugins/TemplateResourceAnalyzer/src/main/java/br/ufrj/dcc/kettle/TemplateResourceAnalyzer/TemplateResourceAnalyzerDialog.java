@@ -4,8 +4,12 @@
 package br.ufrj.dcc.kettle.TemplateResourceAnalyzer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.ModifyEvent;
@@ -32,6 +36,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
@@ -54,7 +61,12 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 	private SwtHelper swthlp;
 	private String dialogTitle;
 	
-	private Group wInputGroup;
+	private Group wFirstInputGroup;
+	private ComboVar wChooseInput;
+	private Group wSecondInputGroup;
+	private ComboVar wResource;
+	private ComboVar wTemplateProperties;
+	private ComboVar wResourceProperties;
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
 	private Button wGetNotMappedResources;
@@ -84,6 +96,7 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 			"ur", "vi", "war",
 			"zh"
 	};
+	
 	private String[] OrderValues = {"Ascending", "Descending"};
 	private String[] TemplateValues;
 	
@@ -173,10 +186,89 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 	}
 	
 	private Control buildContents(Control lastControl, ModifyListener defModListener) {
-		String inputFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.InputFields.Label");
-		wInputGroup = swthlp.appendGroup(shell, lastControl, inputFieldName);
+		CTabFolder wTabFolder = swthlp.appendTabFolder(shell, lastControl, 90);
+		CTabItem item = new CTabItem(wTabFolder, SWT.NONE);
+		item.setText(BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.Tab.InputFields"));
+		Composite cpt = swthlp.appendComposite(wTabFolder, lastControl);
+		
+		String chooseInputField = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.DBpediaField.Label");
+		wChooseInput = appendComboVar(null, defModListener, cpt, chooseInputField);
+		wChooseInput.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wChooseInput.setItems(new String[] {"Previous fields input", "DBpedia fields"});
+				busy.dispose();
+			}
+		});
+		wChooseInput.addSelectionListener(new SelectionAdapter() {
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				widgetSelected(arg0);
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				chooseInputField(wChooseInput.getText());
+				templateResourceAnalyzer.setChanged(true);
+			}
+		});
+		
+		String inputFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.FirstInputField.Label");
+		wFirstInputGroup = swthlp.appendGroup(cpt, wChooseInput, inputFieldName);
+		
+		String templatePropertiesField = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.TemplatePropertiesField.Label");
+		wTemplateProperties = appendComboVar(wFirstInputGroup, defModListener, wFirstInputGroup, templatePropertiesField);
+		wTemplateProperties.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wTemplateProperties.setItems(getFields(ValueMetaInterface.TYPE_STRING));
+				busy.dispose();
+			}
+		});
+		
+		String resourceField = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.ResourceField.Label");
+		wResource = appendComboVar(wTemplateProperties, defModListener, wFirstInputGroup, resourceField);
+		wResource.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wResource.setItems(getFields(ValueMetaInterface.TYPE_STRING));
+				busy.dispose();
+			}
+		});
+		
+		String resourcePropertyField = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.ResourcePropertyField.Label");
+		wResourceProperties = appendComboVar(wResource, defModListener, wFirstInputGroup, resourcePropertyField);
+		wResourceProperties.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wResourceProperties.setItems(getFields(ValueMetaInterface.TYPE_STRING));
+				busy.dispose();
+			}
+		});
+		
+		String secondInputFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.SecondInputFields.Label");
+		wSecondInputGroup = swthlp.appendGroup(cpt, wFirstInputGroup, secondInputFieldName);
+		
 		String DBpediaFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.DBpediaField.Label");
-		wDBpedia = appendComboVar(wInputGroup, defModListener, wInputGroup, DBpediaFieldName);
+		wDBpedia = appendComboVar(wSecondInputGroup, defModListener, wSecondInputGroup, DBpediaFieldName);
 		wDBpedia.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -184,13 +276,13 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 			public void focusGained(FocusEvent e) {
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
-				wDBpedia.setItems(DBpediaValues);
 				shell.setCursor(null);
+				wDBpedia.setItems(DBpediaValues);
 				busy.dispose();
 			}
 		});
 		String templateFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.TemplateField.Label");
-		wTemplate = appendComboVar(wDBpedia, defModListener, wInputGroup, templateFieldName);
+		wTemplate = appendComboVar(wDBpedia, defModListener, wSecondInputGroup, templateFieldName);
 		wTemplate.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -203,8 +295,9 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 				busy.dispose();
 			}
 		});
+		
 		String getNotMappedFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.GetNotMappedFields.Label");
-		wGetNotMappedResources = swthlp.appendCheckboxRow(wInputGroup, wTemplate, getNotMappedFieldName,
+		wGetNotMappedResources = swthlp.appendCheckboxRow(wSecondInputGroup, wTemplate, getNotMappedFieldName,
 				new SelectionListener() {
 	            @Override
 	            public void widgetSelected(SelectionEvent arg0)
@@ -218,9 +311,14 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 	            	templateResourceAnalyzer.setChanged();
 	            }
         	});
+		
+		item.setControl(cpt);
+		item = new CTabItem(wTabFolder, SWT.NONE);
+		item.setText(BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.Tab.OutputFields"));
+		cpt = swthlp.appendComposite(wTabFolder, lastControl);
 
 		String outputGroupFieldLabel = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.OutputFields.Label");
-		wOutputGroup = swthlp.appendGroup(shell, wInputGroup, outputGroupFieldLabel);
+		wOutputGroup = swthlp.appendGroup(cpt, null, outputGroupFieldLabel);
 		String orderFieldName = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.OrderField.Label");
 		wOrder = appendComboVar(wOutputGroup, defModListener, wOutputGroup, orderFieldName);
 		wOrder.addFocusListener(new FocusListener() {
@@ -252,8 +350,43 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 								wOutputCSVBrowse, new String[] { ".(csv) files" });
 					}
 				});
+		
+		item.setControl(cpt);
+		
+		wTabFolder.setSelection(0);
 
-		return wOutputGroup;
+		return wTabFolder;
+	}
+	
+	private void chooseInputField(String choice) {
+		Boolean enabled = (choice.equals("Previous fields input")) ? true : false;
+		wResource.setEnabled(enabled);
+		wTemplateProperties.setEnabled(enabled);
+		wResourceProperties.setEnabled(enabled);
+		wDBpedia.setEnabled(!enabled);
+		wTemplate.setEnabled(!enabled);
+		wGetNotMappedResources.setEnabled(!enabled);
+	}
+	
+	private String[] getFields(int type) {
+
+		List<String> result = new ArrayList<String>();
+
+		try {
+			RowMetaInterface inRowMeta = this.transMeta.getPrevStepFields(stepname);
+
+			List<ValueMetaInterface> fields = inRowMeta.getValueMetaList();
+
+			for (ValueMetaInterface field : fields) {
+				if (field.getType() == type || type == -1)
+					result.add(field.getName());
+			}
+
+		} catch (KettleStepException e) {
+			e.printStackTrace();
+		}
+
+		return result.toArray(new String[result.size()]);
 	}
 	
 	@Override
@@ -374,17 +507,26 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 	private void getData(TemplateResourceAnalyzerMeta templateResourceAnalyzer, boolean copyStepname) {
 		if (copyStepname) {
 			wStepname.setText(stepname);
-			if (templateResourceAnalyzer.getDBpedia() != null)
-				wDBpedia.setText(templateResourceAnalyzer.getDBpedia());
-			if (templateResourceAnalyzer.getTemplate() != null)
-				wTemplate.setText(templateResourceAnalyzer.getTemplate());
+			if (templateResourceAnalyzer.getResourceProperties() != null)
+				wResourceProperties.setText(templateResourceAnalyzer.getResourceProperties());
+			if (templateResourceAnalyzer.getTemplateProperties() != null)
+				wTemplateProperties.setText(templateResourceAnalyzer.getTemplateProperties());
+			if (templateResourceAnalyzer.getResource() != null)
+				wResource.setText(templateResourceAnalyzer.getResource());
 			if (templateResourceAnalyzer.getOutputFile() != null)
 				wOutputBrowse.setText(templateResourceAnalyzer.getOutputFile());
 			if (templateResourceAnalyzer.getOutputCSVFile() != null)
 				wOutputCSVBrowse.setText(templateResourceAnalyzer.getOutputCSVFile());
 			if (templateResourceAnalyzer.getOrder() != null)
 				wOrder.setText(templateResourceAnalyzer.getOrder());
+			if (templateResourceAnalyzer.getDBpedia() != null)
+				wDBpedia.setText(templateResourceAnalyzer.getDBpedia());
+			if (templateResourceAnalyzer.getTemplate() != null)
+				wTemplate.setText(templateResourceAnalyzer.getTemplate());
+			if (templateResourceAnalyzer.getChooseInput() != null)
+				wChooseInput.setText(templateResourceAnalyzer.getChooseInput());
 			wGetNotMappedResources.setSelection(templateResourceAnalyzer.getNotMappedResources());
+			chooseInputField(wChooseInput.getText());
 		}
 	}
 	
@@ -393,12 +535,16 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 	*/
 	private void setData(TemplateResourceAnalyzerMeta templateResourceAnalyzer) {
 		stepname = wStepname.getText();
-		templateResourceAnalyzer.setDBpedia(wDBpedia.getText());
-		templateResourceAnalyzer.setTemplate(wTemplate.getText());
+		templateResourceAnalyzer.setResourceProperties(wResourceProperties.getText());
+		templateResourceAnalyzer.setResource(wResource.getText());
+		templateResourceAnalyzer.setTemplateProperties(wTemplateProperties.getText());
 		templateResourceAnalyzer.setOutputFile(wOutputBrowse.getText());
 		templateResourceAnalyzer.setOutputCSVFile(wOutputCSVBrowse.getText());
 		templateResourceAnalyzer.setOrder(wOrder.getText());
+		templateResourceAnalyzer.setDBpedia(wDBpedia.getText());
+		templateResourceAnalyzer.setTemplate(wTemplate.getText());
 		templateResourceAnalyzer.setNotMappedResources(wGetNotMappedResources.getSelection());
+		templateResourceAnalyzer.setChooseInput(wChooseInput.getText());
 		templateResourceAnalyzer.setChanged();
 	}
 }
