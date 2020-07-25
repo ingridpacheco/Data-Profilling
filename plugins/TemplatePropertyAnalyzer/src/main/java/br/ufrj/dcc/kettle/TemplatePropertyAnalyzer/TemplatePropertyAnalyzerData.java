@@ -3,6 +3,7 @@ package br.ufrj.dcc.kettle.TemplatePropertyAnalyzer;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -25,18 +26,17 @@ public RowMetaInterface outputRowMeta;
 	int outputTotalIndex = -1;
 	int outputPercentageIndex = -1;
 	
+	HashSet<String> resources = new HashSet<String>();
 	Map<String, Integer> properties = new Hashtable<String, Integer>();
 	Map<String, Float> propertiesPercentage = new Hashtable<String, Float>();
 	List<String> templateProperties = new ArrayList<>();
+	Hashtable<String, HashSet<String>> resourcesProperties = new Hashtable<String, HashSet<String>>();
 	
 	Integer totalQuantityOfResourcesThatHasTheProperty = 0;
-	Integer quantityTotal = 0;
-	Integer quantityOfResources = 0;
+	Integer totalOfResources = 0;
 	
 	BufferedWriter bufferedWriter;
 	FileWriter CSVwriter;
-	
-	Float percentage = (float) 0;
 	
 	public TemplatePropertyAnalyzerData() {
 		super();

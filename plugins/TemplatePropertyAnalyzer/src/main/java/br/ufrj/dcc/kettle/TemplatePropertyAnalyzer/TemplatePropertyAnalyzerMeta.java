@@ -43,9 +43,21 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 	public String browseOutputFilename;
 	public String browseOutputCSVFilename;
 	private Boolean notMappedResources;
+	private String resourcesProperties;
+	private String resources;
+	private String templateProperties;
+	private String chooseInput;
 	
 	public TemplatePropertyAnalyzerMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public String getChooseInput() {
+		return chooseInput;
+	}
+	
+	public void setChooseInput(String chooseInput) {
+		this.chooseInput = chooseInput;
 	}
 	
 	public String getDBpedia() {
@@ -62,6 +74,30 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 	
 	public void setTemplate(String templateValue) {
 		this.template = templateValue;
+	}
+	
+	public String getResource() {
+		return resources;
+	}
+	
+	public void setResource(String resources) {
+		this.resources = resources;
+	}
+	
+	public String getResourceProperties() {
+		return resourcesProperties;
+	}
+	
+	public void setResourceProperties(String resourcesProperties) {
+		this.resourcesProperties = resourcesProperties;
+	}
+	
+	public String getTemplateProperties() {
+		return templateProperties;
+	}
+	
+	public void setTemplateProperties(String templateProperties) {
+		this.templateProperties = templateProperties;
 	}
 	
 	public String getOutputFile() {
@@ -110,6 +146,7 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 	@Override
 	public void setDefault() {
 		notMappedResources = false;
+		setChooseInput("Previous fields input");
 	// TODO Auto-generated method stub
 	}
 	
@@ -118,8 +155,12 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
 			order = XMLHandler.getTagValue(stepnode,"ORDER");
+			resourcesProperties = XMLHandler.getTagValue(stepnode,"RESOURCESPROPERTIES");
+			templateProperties = XMLHandler.getTagValue(stepnode,"TEMPLATEPROPERTIES");
+			resources = XMLHandler.getTagValue(stepnode,"RESOURCES");
 			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
+			chooseInput = XMLHandler.getTagValue(stepnode,"CHOOSEINPUT");
 			notMappedResources = "Y".equals(XMLHandler.getTagValue(stepnode, "NOTMAPPEDRESOURCES"));
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
@@ -135,6 +176,15 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 		if (template != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("TEMPLATE", template));
 		}
+		if (resourcesProperties != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCESPROPERTIES", resourcesProperties));
+		}
+		if (templateProperties != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("TEMPLATEPROPERTIES", templateProperties));
+		}
+		if (resources != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCES", resources));
+		}
 		if (browseOutputFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
 		}
@@ -144,6 +194,9 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 		if (order != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("ORDER", order));
 		}
+		if (chooseInput != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("CHOOSEINPUT", chooseInput));
+		}
 		retVal.append("    ").append(XMLHandler.addTagValue("NOTMAPPEDRESOURCES", notMappedResources));
 		return retVal.toString();
 	}
@@ -151,8 +204,12 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 	public void readRep(Repository rep, ObjectId stepId, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleException {
 		try {
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
+			resourcesProperties = rep.getStepAttributeString(stepId, "RESOURCESPROPERTIES");
+			templateProperties = rep.getStepAttributeString(stepId, "TEMPLATEPROPERTIES");
+			resources = rep.getStepAttributeString(stepId, "RESOURCES");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			order = rep.getStepAttributeString(stepId, "ORDER");
+			chooseInput = rep.getStepAttributeString(stepId, "CHOOSEINPUT");
 			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
 			notMappedResources = rep.getStepAttributeBoolean(stepId, "NOTMAPPEDRESOURCES");
@@ -166,6 +223,15 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 			if (DBpedia != null) {
 				rep.saveStepAttribute(transformationId, stepId, "DBPEDIA", DBpedia);
 			}
+			if (resourcesProperties != null) {
+				rep.saveStepAttribute(transformationId, stepId, "RESOURCESPROPERTIES", resourcesProperties);
+			}
+			if (templateProperties != null) {
+				rep.saveStepAttribute(transformationId, stepId, "TEMPLATEPROPERTIES", templateProperties);
+			}
+			if (resources != null) {
+				rep.saveStepAttribute(transformationId, stepId, "RESOURCES", resources);
+			}
 			if (template != null) {
 				rep.saveStepAttribute(transformationId, stepId, "TEMPLATE", template);
 			}
@@ -178,6 +244,9 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 			if (order != null) {
 				rep.saveStepAttribute(transformationId, stepId, "ORDER", order);
 			}
+			if (chooseInput != null) {
+				rep.saveStepAttribute(transformationId, stepId, "CHOOSEINPUT", chooseInput);
+			}
 			rep.saveStepAttribute(transformationId, stepId,
 	                "NOTMAPPEDRESOURCES", notMappedResources);
 		} catch (Exception e) {
@@ -186,6 +255,8 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 	}
 	
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
+		rowMeta.clear();
+		
 		ValueMetaInterface PropertyMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
 		PropertyMeta.setName("Property");
 		PropertyMeta.setOrigin(origin);
