@@ -2,7 +2,9 @@ package br.ufrj.dcc.kettle.GetDBpediaData;
 
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
@@ -25,6 +27,11 @@ public class GetDBpediaDataData extends BaseStepData implements StepDataInterfac
 	int outputTypeIndex = -1;
 	
 	List<String> dataFound = new ArrayList<>();
+	String resourceName = "";
+	Map<String, Integer> properties = new Hashtable<String, Integer>();
+	List<String> resourceProperties = new ArrayList<>();
+	List<String> propertyValues = new ArrayList<>();
+	List<String> propertyTypes = new ArrayList<>();
 	
 	FileWriter CSVwriter;
 	
