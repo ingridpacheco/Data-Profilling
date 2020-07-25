@@ -285,7 +285,7 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 			String[] properties = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "").split(", ");
 			List<String> resourceProperties = new ArrayList<String>(Arrays.asList(properties));
 			String hasProperty = resourceProperties.contains(templateProperty) ? "Yes" : "No";
-			if ((hasProperty.equals("Yes") && meta.getResource().equals("Has property")) || (hasProperty.equals("No") && meta.getResource().equals("Doesn't have property")) || meta.getResource().equals("All")) {{
+			if ((hasProperty.equals("Yes") && meta.getResource().equals("Has property")) || (hasProperty.equals("No") && meta.getResource().equals("Doesn't have property")) || meta.getResource().equals("All")) {
 				try {
 					CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resource, hasProperty), ',');
 					
@@ -300,7 +300,6 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 				outputRow[data.outputInsideResourcesIndex] = hasProperty;
 					
 				putRow(data.outputRowMeta, outputRow);
-			}
 			}
 			return true;
 		}
