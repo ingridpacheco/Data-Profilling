@@ -20,6 +20,9 @@ public class InnerProfilingData extends BaseStepData implements StepDataInterfac
 	
 	int outputSubjectIndex = -1;
 	int outputPredicatesIndex = -1;
+	int outputMissingPredicatesIndex = -1;
+	int outputQuantityMissingPredicatesIndex = -1;
+	int outputCompletenessPercentageIndex = -1;
 	
 	Set<String> predicates = new HashSet<>();
 	Hashtable<String, HashSet<String>> subjectsPredicates = new Hashtable<String,HashSet<String>>();

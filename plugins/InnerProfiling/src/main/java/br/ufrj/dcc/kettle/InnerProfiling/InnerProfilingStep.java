@@ -15,6 +15,7 @@ import java.util.Hashtable;
 
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.exception.KettleValueException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
@@ -90,6 +91,8 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 		data = (InnerProfilingData) sdi;
 		
 		Object[] inputRow = getRow(); // get row, blocks when needed!
+		Object[] outputRow = inputRow;
+		outputRow = RowDataUtil.resizeArray(outputRow, 5);
 		
 		if (inputRow == null) // no more input to be expected…
 		{
@@ -100,7 +103,7 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 				this.logBasic("Writing the information in the file");
 				
 				//Write analysis results in CSV and txt files
-				writeCSV();
+				writeCSV(outputRow);
 				data.CSVwriter.flush();
 		        data.CSVwriter.close();
 				
@@ -121,7 +124,10 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
 			
 			data.outputSubjectIndex = data.outputRowMeta.indexOfValue( "Subject" );
-			data.outputPredicatesIndex = data.outputRowMeta.indexOfValue( "Predicates" );
+			data.outputPredicatesIndex = data.outputRowMeta.indexOfValue( "Qtd. Predicates" );
+			data.outputMissingPredicatesIndex = data.outputRowMeta.indexOfValue( "Missing Predicates" );
+			data.outputQuantityMissingPredicatesIndex = data.outputRowMeta.indexOfValue( "Qtd. Missing Predicates" );
+			data.outputCompletenessPercentageIndex = data.outputRowMeta.indexOfValue( "Completeness Percentage" );
 			
 			//Initialize writing in CSV and txt files
 			FileWriter CSVwriter;
@@ -149,13 +155,7 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 		}
 		if (!meta.getIsInputCSV()) {
 			//Get RDF parameters
-			getRdfInformation(inputRow);	
-			
-			Object[] outputRow = inputRow;
-			outputRow = RowDataUtil.resizeArray(outputRow, 3);
-			outputRow[data.outputSubjectIndex] = subject;
-			outputRow[data.outputPredicatesIndex] = predicate;
-			putRow(data.outputRowMeta, outputRow);
+			getRdfInformation(inputRow);
 		}
 		
 		return true;
@@ -204,23 +204,36 @@ public class InnerProfilingStep extends BaseStep implements StepInterface {
 		}
 	}
 	
-	private void writeCSV() throws IOException {
-		for (String subject : data.missingPredicates.keySet()) {
-			HashSet<String> subjectPredicates = data.missingPredicates.get(subject);
-			String predicateString = createPredicateString(subjectPredicates);
-			
-			//Calculates the completeness percentage of the subject
-			Integer completenessPercentage = getCompletenessPercentage(data.subjectsPredicates.get(subject));
-			CSVUtils.writeLine(data.CSVwriter, Arrays.asList(subject, predicateString, String.valueOf(data.subjectsPredicates.get(subject).size()), String.valueOf(subjectPredicates.size()), completenessPercentage.toString()), ',');
-			data.bufferedWriter.newLine();
-			if (subjectPredicates.size() > 0) {
-				data.bufferedWriter.write(String.format("The subject %s could become more complete with this predicates: %s.", subject, predicateString));
+	private void writeCSV(Object[] outputRow) throws IOException, KettleStepException {
+		for (String subject : data.subjectsPredicates.keySet()) {
+			String predicateString = "";
+			HashSet<String> subjectPredicates = new HashSet<String>();
+			Integer completenessPercentage = 100;
+			if (!data.missingPredicates.containsKey(subject) || data.missingPredicates.get(subject).size() == 0) {
+				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(subject, "", String.valueOf(data.subjectsPredicates.get(subject).size()), String.valueOf(0), String.valueOf(completenessPercentage)), ',');
+				data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("The subject %s is totally complete", subject));
+				data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("It currently has a completeness percentage of %d because it has %d predicates out of %d", String.valueOf(completenessPercentage), data.subjectsPredicates.get(subject).size(), data.predicates.size()));
 			}
 			else {
-				data.bufferedWriter.write(String.format("The subject %s is totally complete", subject));
+				subjectPredicates = data.missingPredicates.get(subject);
+				predicateString = createPredicateString(subjectPredicates);
+				
+				//Calculates the completeness percentage of the subject
+				completenessPercentage = getCompletenessPercentage(data.subjectsPredicates.get(subject));
+				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(subject, predicateString, String.valueOf(data.subjectsPredicates.get(subject).size()), String.valueOf(subjectPredicates.size()), completenessPercentage.toString()), ',');
+				data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("The subject %s could become more complete with this predicates: %s.", subject, predicateString));
+				data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("It currently has a completeness percentage of %d because it has %d predicates out of %d", completenessPercentage, data.subjectsPredicates.get(subject).size(), data.predicates.size()));
 			}
-			data.bufferedWriter.newLine();
-			data.bufferedWriter.write(String.format("It currently has a completeness percentage of %d because it has %d predicates out of %d", completenessPercentage, data.subjectsPredicates.get(subject).size(), data.predicates.size()));
+			outputRow[data.outputSubjectIndex] = subject;
+			outputRow[data.outputMissingPredicatesIndex] = predicateString;
+			outputRow[data.outputPredicatesIndex] = data.subjectsPredicates.get(subject).size();
+			outputRow[data.outputQuantityMissingPredicatesIndex] = subjectPredicates.size();
+			outputRow[data.outputCompletenessPercentageIndex] = completenessPercentage;
+			putRow(data.outputRowMeta, outputRow);
 		}
 	}
 	

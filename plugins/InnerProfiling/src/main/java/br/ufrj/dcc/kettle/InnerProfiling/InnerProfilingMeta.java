@@ -233,10 +233,21 @@ public class InnerProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 		SubjectMeta.setOrigin(origin);
 		rowMeta.addValueMeta(SubjectMeta);
 		
-		ValueMetaInterface PredicatesMeta = new ValueMetaString("");
-		PredicatesMeta.setName("Predicates");
-		PredicatesMeta.setOrigin(origin);
-		rowMeta.addValueMeta(PredicatesMeta);
+		ValueMetaInterface MissingPredicatesMeta = new ValueMetaString("Missing Predicates");
+		MissingPredicatesMeta.setOrigin(origin);
+		rowMeta.addValueMeta(MissingPredicatesMeta);
+		
+		ValueMetaInterface QuantityPredicates = new ValueMetaString("Qtd. Predicates");
+		QuantityPredicates.setOrigin(origin);
+		rowMeta.addValueMeta(QuantityPredicates);
+		
+		ValueMetaInterface QuantityMissingPredicates = new ValueMetaString("Qtd. Missing Predicates");
+		QuantityMissingPredicates.setOrigin(origin);
+		rowMeta.addValueMeta(QuantityMissingPredicates);
+		
+		ValueMetaInterface CompletenessPercentage = new ValueMetaString("Completeness Percentage");
+		CompletenessPercentage.setOrigin(origin);
+		rowMeta.addValueMeta(CompletenessPercentage);
 	}
 	
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev, String input[], String output[], RowMetaInterface info) {
