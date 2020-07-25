@@ -219,9 +219,9 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
 			String[] literalValue = value.split("xsd\\W")[1].split(" ");
 			return String.format("\"%s\"^^<http://www.w3.org/2001/XMLSchema#%s> .", literalValue[1], literalValue[0]);
 		}
-		if (Pattern.matches("^(dbr\\W).*$", value)) {
-			String resourceName = value.split("dbr\\W")[1];
-			String resourceUrl = String.format("http://%s.dbpedia.org/resource/%s", meta.getDBpedia(), resourceName);
+		if (Pattern.matches("^(dbr\\W).*$", value) || value.matches("(.*)resource(.*)")) {
+			String expression = Pattern.matches("^(dbr\\W).*$", value) ? "dbr\\W" : "resource/";
+			String resourceUrl = String.format("http://%s.dbpedia.org/resource/%s", meta.getDBpedia(), value.split(expression)[1]);
 			return String.format("<%s> .", resourceUrl);
 		}
 		return String.format("\"%s\"@%s .", value, meta.getDBpedia());
