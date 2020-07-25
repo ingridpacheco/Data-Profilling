@@ -446,7 +446,7 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 				
 				initializeOutputFiles();
 				try {
-					data.bufferedWriter.write(String.format("There are %s resources inside %s. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size(), meta.getTemplate()));
+					data.bufferedWriter.write(String.format("There are %s resources. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size()));
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
