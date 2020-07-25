@@ -191,7 +191,7 @@ public class TemplateResourceAnalyzerDialog extends BaseStepDialog implements St
 		item.setText(BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.Tab.InputFields"));
 		Composite cpt = swthlp.appendComposite(wTabFolder, lastControl);
 		
-		String chooseInputField = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.DBpediaField.Label");
+		String chooseInputField = BaseMessages.getString(PKG, "TemplateResourceAnalyzerStep.ChooseInput.Label");
 		wChooseInput = appendComboVar(null, defModListener, cpt, chooseInputField);
 		wChooseInput.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
