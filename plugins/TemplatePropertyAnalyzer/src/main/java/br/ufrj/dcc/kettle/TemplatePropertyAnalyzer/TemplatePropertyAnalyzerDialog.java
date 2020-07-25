@@ -72,8 +72,6 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 	private ComboVar wTemplate;
 	private Button wGetNotMappedResources;
 	
-//	private Group wInputGroup;
-	
 	private Group wOutputGroup;
 	private ComboVar wOrder;
 	private TextVar wOutputBrowse;
