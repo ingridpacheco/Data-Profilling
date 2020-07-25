@@ -58,15 +58,17 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 	
 	private Group wInputGroup;
 	private Button wIsInputCSV;
-	private TextVar wInputFirstCSVBrowse;
+	private TextVar wInputFirstCSV;
 	private ComboVar wInputChoice;
 	private ComboVar wNTripleFieldName;
 	private ComboVar wSubject;
 	private ComboVar wPredicate;
+	private ComboVar wValue;
 	
 	private Group wInputSecondGroup;
+	private Button wCompareValues;
 	private Button wIsTriplified;
-	private TextVar wInputCSVBrowse;
+	private TextVar wInputSecondCSV;
 	
 	private Group wOutputGroup;
 	private TextVar wOutputBrowse;
@@ -162,15 +164,15 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 	            }
 		});
 		String inputCSVLabel = BaseMessages.getString(PKG, "MergeProfilingStep.FirstInputCSVBrowse.Label");
-		wInputFirstCSVBrowse = textVarWithButton(wInputGroup, wIsInputCSV, inputCSVLabel,
+		wInputFirstCSV = textVarWithButton(wInputGroup, wIsInputCSV, inputCSVLabel,
 				defModListener, BaseMessages.getString(PKG, "MergeProfilingStep.Btn.Browse"), new SelectionAdapter() {
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
-								wInputFirstCSVBrowse, new String[] { ".(csv) files" });
+								wInputFirstCSV, new String[] { ".(csv) files" });
 					}
 				});
 		String InputChoiceLabel = BaseMessages.getString(PKG, "MergeProfilingStep.InputChoice.Label");
-		wInputChoice = appendComboVar(wInputFirstCSVBrowse, defModListener, wInputGroup, InputChoiceLabel);
+		wInputChoice = appendComboVar(wInputFirstCSV, defModListener, wInputGroup, InputChoiceLabel);
 		wInputChoice.addSelectionListener(new SelectionAdapter() {
 			public void widgetDefaultSelected(SelectionEvent arg0) {
 				widgetSelected(arg0);
@@ -238,6 +240,21 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 				busy.dispose();
 			}
 		});
+		
+		String valueLabel = BaseMessages.getString(PKG, "MergeProfilingStep.ValueField.Label");	
+		wValue = appendComboVar(wPredicate, defModListener, wInputGroup, valueLabel);
+		wValue.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wValue.setItems(getFields(ValueMetaInterface.TYPE_STRING));
+				busy.dispose();
+			}
+		});
 		return wInputGroup;
 	}
 	
@@ -257,11 +274,11 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 				}
 		});
 		String inputCSVLabel = BaseMessages.getString(PKG, "MergeProfilingStep.InputCSVBrowse.Label");
-		wInputCSVBrowse = textVarWithButton(wInputSecondGroup, wIsTriplified, inputCSVLabel,
+		wInputSecondCSV = textVarWithButton(wInputSecondGroup, wIsTriplified, inputCSVLabel,
 				defModListener, BaseMessages.getString(PKG, "MergeProfilingStep.Btn.Browse"), new SelectionAdapter() {
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
-								wInputCSVBrowse, new String[] { ".(csv) files" });
+								wInputSecondCSV, new String[] { ".(csv) files" });
 					}
 				});
 		return wInputSecondGroup;
@@ -275,8 +292,34 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 		String outputLabel = BaseMessages.getString(PKG, "MergeProfilingStep.OutputFields.Label");
 		wOutputGroup = swthlp.appendGroup(shell, lastControl, outputLabel);
 		
+		String compareValuesField = BaseMessages.getString(PKG, "MergeProfilingStep.CompareValues.Label");
+		wCompareValues = swthlp.appendCheckboxRow(wOutputGroup, wOutputGroup, compareValuesField,
+				new SelectionListener() {
+	            @Override
+	            public void widgetSelected(SelectionEvent arg0)
+	            {
+	            	MergeProfiling.setChanged();
+	            }
+	
+	            @Override
+	            public void widgetDefaultSelected(SelectionEvent arg0)
+	            {
+	            	MergeProfiling.setChanged();
+	            }
+        	});
+		wCompareValues.addSelectionListener(new SelectionAdapter() {
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				widgetSelected(arg0);
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				getValue(wCompareValues.getSelection());
+				MergeProfiling.setChanged(true);
+			}
+		});
+		
 		String outputReportLabel = BaseMessages.getString(PKG, "MergeProfilingStep.OutputReport.Label");
-		wOutputBrowse = textVarWithButton(wOutputGroup, wOutputGroup, outputReportLabel,
+		wOutputBrowse = textVarWithButton(wOutputGroup, wCompareValues, outputReportLabel,
 				defModListener, BaseMessages.getString(PKG, "MergeProfilingStep.Btn.Browse"), new SelectionAdapter() {
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.txt; *.TXT" },
@@ -294,6 +337,10 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 				});
 
 		return wOutputGroup;
+	}
+	
+	private void getValue(boolean choice) {
+		wValue.setEnabled(choice);
 	}
 	
 	private void shouldInputCSV(boolean choice) {
@@ -477,18 +524,20 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 			wPredicate.setText(MergeProfiling.getPredicate());
 		if (MergeProfiling.getIsTriplified() != null)
 			wIsTriplified.setSelection(MergeProfiling.getIsTriplified());
-		if (MergeProfiling.getInputCSVFile() != null)
-			wInputCSVBrowse.setText(MergeProfiling.getInputCSVFile());
+		if (MergeProfiling.getInputSecondCSV() != null)
+			wInputSecondCSV.setText(MergeProfiling.getInputSecondCSV());
 		if (MergeProfiling.getOutputFile() != null)
 			wOutputBrowse.setText(MergeProfiling.getOutputFile());
 		if (MergeProfiling.getOutputCSVFile() != null)
 			wOutputCSVBrowse.setText(MergeProfiling.getOutputCSVFile());
 		if (MergeProfiling.getInputChoice() != null)
 			wInputChoice.setText(MergeProfiling.getInputChoice());
-		if (MergeProfiling.getInputCSVBrowse() != null)
-			wInputFirstCSVBrowse.setText(MergeProfiling.getInputCSVBrowse());
+		if (MergeProfiling.getInputFirstCSV() != null)
+			wInputFirstCSV.setText(MergeProfiling.getInputFirstCSV());
 		wIsInputCSV.setSelection(MergeProfiling.getIsInputCSV());
+		wCompareValues.setSelection(MergeProfiling.getCompareValues());
 		chooseNTripleOrFields(wInputChoice.getText());
+		getValue(wCompareValues.getSelection());
 		shouldInputCSV(true);
 	}
 	
@@ -506,11 +555,12 @@ public class MergeProfilingDialog extends BaseStepDialog implements StepDialogIn
 		MergeProfiling.setSubject(wSubject.getText());
 		MergeProfiling.setPredicate(wPredicate.getText());
 		MergeProfiling.setIsTriplified(wIsTriplified.getSelection());
-		MergeProfiling.setInputCSVFile(wInputCSVBrowse.getText());
+		MergeProfiling.setInputSecondCSV(wInputSecondCSV.getText());
 		MergeProfiling.setOutputFile(wOutputBrowse.getText());
 		MergeProfiling.setOutputCSVFile(wOutputCSVBrowse.getText());
-		MergeProfiling.setInputCSVBrowse(wInputFirstCSVBrowse.getText());
+		MergeProfiling.setInputFirstCSV(wInputFirstCSV.getText());
 		MergeProfiling.setIsInputCSV(wIsInputCSV.getSelection());
+		MergeProfiling.setCompareValues(wCompareValues.getSelection());
 		
 		// close the SWT dialog window
 		MergeProfiling.setChanged();

@@ -42,23 +42,41 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 	private String subject;
 	private String predicate;
 	private Boolean isTriplified;
-	public String browseInputCSVFilename;
+	public String browseSecondInputCSV;
 	public String browseOutputFilename;
 	public String browseOutputCSVFilename;
 	private String inputChoice;
-	private String browseFirstInputCSVFilename;
+	private String browseFirstInputCSV;
 	private Boolean isInputCSV;
+	private Boolean compareValues;
+	private String value;
 	
 	public MergeProfilingMeta() {
 		super(); // allocate BaseStepInfo
 	}
 	
-	public String getInputCSVBrowse() {
-		return browseFirstInputCSVFilename;
+	public String getValue() {
+		return value;
 	}
 	
-	public void setInputCSVBrowse(String browseFirstInputCSVFilename) {
-		this.browseFirstInputCSVFilename = browseFirstInputCSVFilename;
+	public void setValue(String value) {
+		this.value = value;
+	}
+	
+	public Boolean getCompareValues() {
+		return compareValues;
+	}
+	
+	public void setCompareValues(Boolean compareValues) {
+		this.compareValues = compareValues;
+	}
+	
+	public String getInputFirstCSV() {
+		return browseFirstInputCSV;
+	}
+	
+	public void setInputFirstCSV(String browseFirstInputCSV) {
+		this.browseFirstInputCSV = browseFirstInputCSV;
 	}
 	
 	public Boolean getIsInputCSV() {
@@ -109,12 +127,12 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 		this.browseOutputCSVFilename = browseOutputCSVFilename;
 	}
 	
-	public String getInputCSVFile() {
-		return browseInputCSVFilename;
+	public String getInputSecondCSV() {
+		return browseSecondInputCSV;
 	}
 
-	public void setInputCSVFile(String browseInputCSVFilename) {
-		this.browseInputCSVFilename = browseInputCSVFilename;
+	public void setInputSecondCSV(String browseSecondInputCSV) {
+		this.browseSecondInputCSV = browseSecondInputCSV;
 	}
 	
 	public Boolean getIsTriplified() {
@@ -153,6 +171,7 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 		setInputChoice("N-Triple");
 		setIsTriplified(false);
 		setIsInputCSV(true);
+		setCompareValues(false);
 		
 	// TODO Auto-generated method stub
 	}
@@ -168,12 +187,14 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 			subject = XMLHandler.getTagValue(stepnode,"SUBJECT");
 			predicate = XMLHandler.getTagValue(stepnode,"PREDICATE");
 			isTriplified = "Y".equals(XMLHandler.getTagValue(stepnode, "ISTRIPLIFIED"));
-			browseInputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEINPUTCSVFILENAME");
+			browseSecondInputCSV = XMLHandler.getTagValue(stepnode,"BROWSESECONDINPUTCSV");
 			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
-			browseFirstInputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEINPUTCSVFILENAME");
+			browseFirstInputCSV = XMLHandler.getTagValue(stepnode,"BROWSEFIRSTINPUTCSV");
+			value = XMLHandler.getTagValue(stepnode,"VALUE");
 			inputChoice = XMLHandler.getTagValue(stepnode, "INPUTCHOICE");
 			isInputCSV = "Y".equals(XMLHandler.getTagValue(stepnode, "ISINPUTCSV"));
+			compareValues = "Y".equals(XMLHandler.getTagValue(stepnode, "COMPAREVALUES"));
 		} catch (Exception e) {
 			throw new KettleXMLException("Load XML: Excption ", e);// Messages.getString(“KafkaTopicPartitionConsumerMeta.Exception.loadXml”),
 		// e);
@@ -191,19 +212,23 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 		if (predicate != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("PREDICATE", predicate));
 		}
-		if (browseInputCSVFilename != null) {
-			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEINPUTCSVFILENAME", browseInputCSVFilename));
+		if (browseSecondInputCSV != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSESECONDINPUTCSV", browseSecondInputCSV));
 		}
 		if (browseOutputFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
 		}
+		if (value != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("VALUE", value));
+		}
 		if (browseOutputCSVFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename));
 		}
-		if (browseFirstInputCSVFilename != null) {
-			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEINPUTCSVFILENAME", browseFirstInputCSVFilename));
+		if (browseFirstInputCSV != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEFIRSTINPUTCSV", browseFirstInputCSV));
 		}
 		retVal.append("    ").append(XMLHandler.addTagValue("ISTRIPLIFIED", isTriplified));
+		retVal.append("    ").append(XMLHandler.addTagValue("COMPAREVALUES", compareValues));
 		retVal.append("    ").append(XMLHandler.addTagValue("INPUTCHOICE", inputChoice));
 		retVal.append("    ").append(XMLHandler.addTagValue("ISINPUTCSV", isInputCSV));
 		return retVal.toString();
@@ -216,11 +241,13 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 			predicate = rep.getStepAttributeString(stepId, "PREDICATE");
 			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
-			browseInputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEINPUTCSVFILENAME");
+			value = rep.getStepAttributeString(stepId, "VALUE");
+			browseSecondInputCSV = rep.getStepAttributeString(stepId, "BROWSESECONDINPUTCSV");
 			inputChoice = rep.getStepAttributeString(stepId, "INPUTCHOICE");
 			isTriplified = rep.getStepAttributeBoolean(stepId, "ISTRIPLIFIED");
-			browseFirstInputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEINPUTCSVFILENAME");
+			browseFirstInputCSV = rep.getStepAttributeString(stepId, "BROWSEFIRSTINPUTCSV");
 			isInputCSV = rep.getStepAttributeBoolean(stepId, "ISINPUTCSV");
+			compareValues = rep.getStepAttributeBoolean(stepId, "COMPAREVALUES");
 		} catch (Exception e) {
 			throw new KettleException("Unexpected error reading step Sample Plug-In from the repository", e);
 		}
@@ -240,19 +267,24 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 			if (browseOutputFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTFILENAME", browseOutputFilename);
 			}
+			if (value != null) {
+				rep.saveStepAttribute(transformationId, stepId, "VALUE", value);
+			}
 			if (browseOutputCSVFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename);
 			}
-			if (browseInputCSVFilename != null) {
-				rep.saveStepAttribute(transformationId, stepId, "BROWSEINPUTCSVFILENAME", browseInputCSVFilename);
+			if (browseSecondInputCSV != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSESECONDINPUTCSV", browseSecondInputCSV);
 			}
-			if (browseFirstInputCSVFilename != null) {
-				rep.saveStepAttribute(transformationId, stepId, "BROWSEINPUTCSVFILENAME", browseFirstInputCSVFilename);
+			if (browseFirstInputCSV != null) {
+				rep.saveStepAttribute(transformationId, stepId, "BROWSEFIRSTINPUTCSV", browseFirstInputCSV);
 			}
 			rep.saveStepAttribute(transformationId, stepId,
 	                "ISTRIPLIFIED", isTriplified);
 			rep.saveStepAttribute(transformationId, stepId,
 	                "INPUTCHOICE", inputChoice);
+			rep.saveStepAttribute(transformationId, stepId,
+	                "COMPAREVALUES", compareValues);
 			rep.saveStepAttribute(transformationId, stepId,
 	                "ISINPUTCSV", isInputCSV);
 		} catch (Exception e) {
@@ -265,13 +297,25 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 		SubjectMeta.setOrigin(origin);
 		rowMeta.addValueMeta(SubjectMeta);
 		
-		ValueMetaInterface PredicatesMeta = new ValueMetaString("Predicates");
-		PredicatesMeta.setOrigin(origin);
-		rowMeta.addValueMeta(PredicatesMeta);
+		ValueMetaInterface IsInputMeta = new ValueMetaString("Is Subject In First Input");
+		IsInputMeta.setOrigin(origin);
+		rowMeta.addValueMeta(IsInputMeta);
 		
-		ValueMetaInterface IsCSVMeta = new ValueMetaString("IsSubjectInCSV");
-		IsCSVMeta.setOrigin(origin);
-		rowMeta.addValueMeta(IsCSVMeta);
+		ValueMetaInterface MissingPredicatesMeta = new ValueMetaString("Missing Predicates");
+		MissingPredicatesMeta.setOrigin(origin);
+		rowMeta.addValueMeta(MissingPredicatesMeta);
+		
+		ValueMetaInterface QuantityPredicates = new ValueMetaString("Qtd. Predicates");
+		QuantityPredicates.setOrigin(origin);
+		rowMeta.addValueMeta(QuantityPredicates);
+		
+		ValueMetaInterface QuantityMissingPredicates = new ValueMetaString("Qtd. Missing Predicates");
+		QuantityMissingPredicates.setOrigin(origin);
+		rowMeta.addValueMeta(QuantityMissingPredicates);
+		
+		ValueMetaInterface CompletenessPercentage = new ValueMetaString("Completeness Percentage");
+		CompletenessPercentage.setOrigin(origin);
+		rowMeta.addValueMeta(CompletenessPercentage);
 	}
 	
 	public void check(List<CheckResultInterface> remarks, TransMeta transMeta, StepMeta stepMeta, RowMetaInterface prev, String input[], String output[], RowMetaInterface info) {
