@@ -211,8 +211,6 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 			data.bufferedWriter = new BufferedWriter(writer);
 			 
             data.bufferedWriter.write("The result of the analysis was:");
-            data.bufferedWriter.newLine();
-            data.bufferedWriter.write(String.format("There are %s resources in %s. The property %s is not in some of them.", data.resources.size(), meta.getTemplate(), meta.getProperty()));
             
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
@@ -229,63 +227,6 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 		if (inputRow == null) // no more input to be expected…
 		{
 			this.logBasic("No more rows to be processed... ");
-			setOutputDone();
-			return false;
-		}
-		
-	
-		if (first) {
-			first = false;
-			data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
-			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
-			
-			data.outputResourceIndex = data.outputRowMeta.indexOfValue( "Resource" );
-			data.outputInsideResourcesIndex = data.outputRowMeta.indexOfValue( "Has the property?" );
-		    
-		    if (meta.getDBpedia().equals("pt") || meta.getDBpedia().equals("fr") || meta.getDBpedia().equals("ja")) {
-			    this.logBasic("Getting the resources");
-				data.resources = getResources();
-		    }
-		    
-		    if (meta.getNotMappedResources() == true) {
-				data.resources = getNotMappedResources();
-			}
-			
-			this.logBasic("Output Files are being written... ");
-			initializeOutputFiled();
-		}
-		
-		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 4 );
-			    
-		if (data.resources.size() > 0) {
-			
-			String resourceName = data.resources.remove(0);
-			
-			this.logBasic(String.format("Writting the information from the resource: %s", resourceName));
-			
-			String hasProperty = checkPropertyInResource(resourceName);
-			
-			if ((hasProperty.equals("Yes") && meta.getResource().equals("Has property")) || (hasProperty.equals("No") && meta.getResource().equals("Doesn't have property")) || meta.getResource().equals("All")) {
-				
-				try {
-					CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resourceName, hasProperty), ',');
-					
-	            	data.bufferedWriter.newLine();
-					data.bufferedWriter.write(String.format("The resource %s has the property? %s.", resourceName, hasProperty));
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				outputRow[data.outputResourceIndex] = resourceName;
-				outputRow[data.outputInsideResourcesIndex] = hasProperty;
-					
-				putRow(data.outputRowMeta, outputRow);
-			}
-			
-			return true;
-		}
-		else {
 			this.logBasic("Transformation complete");
 			
 			try {
@@ -298,9 +239,117 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 			setOutputDone();
 			return false;
+		}
+	
+		if (first) {
+			first = false;
+			data.outputRowMeta = (RowMetaInterface) getInputRowMeta().clone();
+			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
+			
+			data.outputResourceIndex = data.outputRowMeta.indexOfValue( "Resource" );
+			data.outputInsideResourcesIndex = data.outputRowMeta.indexOfValue( "Has the property?" );
+			
+			if (!meta.getChooseInput().equals("Previous resources input")) {
+				if (meta.getDBpedia().equals("pt") || meta.getDBpedia().equals("fr") || meta.getDBpedia().equals("ja")) {
+				    this.logBasic("Getting the resources");
+					data.resources = getResources();
+			    }
+			    
+			    if (meta.getNotMappedResources() == true) {
+					data.resources = getNotMappedResources();
+				}
+			    this.logBasic("Output Files are being written... ");
+			    initializeOutputFiled();
+			    try {
+					data.bufferedWriter.newLine();
+					data.bufferedWriter.write(String.format("There are %s resources in %s. The property %s is not in some of them.", data.resources.size(), meta.getTemplate(), meta.getProperty()));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			else {
+				this.logBasic("Output Files are being written... ");
+				initializeOutputFiled();
+			}
+			
+		}
+		
+		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 4 );
+		
+		if (meta.getChooseInput().equals("Previous resources input")) {
+			String templateProperty = meta.getProperty();
+			String resource = getInputRowMeta().getString(inputRow, meta.getInputResource(), "");
+			String[] properties = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "").split(", ");
+			List<String> resourceProperties = new ArrayList<String>(Arrays.asList(properties));
+			String hasProperty = resourceProperties.contains(templateProperty) ? "Yes" : "No";
+			if ((hasProperty.equals("Yes") && meta.getResource().equals("Has property")) || (hasProperty.equals("No") && meta.getResource().equals("Doesn't have property")) || meta.getResource().equals("All")) {{
+				try {
+					CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resource, hasProperty), ',');
+					
+	            	data.bufferedWriter.newLine();
+					data.bufferedWriter.write(String.format("The resource %s has the property? %s.", resource, hasProperty));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				outputRow[data.outputResourceIndex] = resource;
+				outputRow[data.outputInsideResourcesIndex] = hasProperty;
+					
+				putRow(data.outputRowMeta, outputRow);
+			}
+			}
+			return true;
+		}
+		else {
+			if (data.resources.size() > 0) {
+				
+				String resourceName = data.resources.remove(0);
+				
+				this.logBasic(String.format("Writting the information from the resource: %s", resourceName));
+				
+				String hasProperty = checkPropertyInResource(resourceName);
+				
+				if ((hasProperty.equals("Yes") && meta.getResource().equals("Has property")) || (hasProperty.equals("No") && meta.getResource().equals("Doesn't have property")) || meta.getResource().equals("All")) {
+					
+					try {
+						CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resourceName, hasProperty), ',');
+						
+		            	data.bufferedWriter.newLine();
+						data.bufferedWriter.write(String.format("The resource %s has the property? %s.", resourceName, hasProperty));
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+					outputRow[data.outputResourceIndex] = resourceName;
+					outputRow[data.outputInsideResourcesIndex] = hasProperty;
+						
+					putRow(data.outputRowMeta, outputRow);
+				}
+				
+				return true;
+			}
+			else {
+				this.logBasic("Transformation complete");
+				
+				try {
+					data.CSVwriter.flush();
+			        data.CSVwriter.close();
+					
+	            	data.bufferedWriter.close();
+					this.logBasic("Output Files were written... ");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				setOutputDone();
+				return false;
+			}
 		}
 	}
 

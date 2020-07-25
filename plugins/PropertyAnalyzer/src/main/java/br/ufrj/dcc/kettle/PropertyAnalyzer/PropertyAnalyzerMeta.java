@@ -45,9 +45,36 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 	public String browseOutputFilename;
 	public String browseOutputCSVFilename;
 	private Boolean notMappedResources;
+	private String resourcesProperties;
+	private String resources;
+	private String chooseInput;
 	
 	public PropertyAnalyzerMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public String getChooseInput() {
+		return chooseInput;
+	}
+	
+	public void setChooseInput(String chooseInput) {
+		this.chooseInput = chooseInput;
+	}
+	
+	public String getInputResource() {
+		return resources;
+	}
+	
+	public void setInputResource(String resources) {
+		this.resources = resources;
+	}
+	
+	public String getResourceProperties() {
+		return resourcesProperties;
+	}
+	
+	public void setResourceProperties(String resourcesProperties) {
+		this.resourcesProperties = resourcesProperties;
 	}
 	
 	public String getDBpedia() {
@@ -124,7 +151,7 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 	@Override
 	public void setDefault() {
 		setNotMappedResources(false);
-		
+		setChooseInput("Previous resources input");
 	// TODO Auto-generated method stub
 	}
 	
@@ -137,8 +164,11 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 		try {
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
+			resourcesProperties = XMLHandler.getTagValue(stepnode,"RESOURCESPROPERTIES");
+			resources = XMLHandler.getTagValue(stepnode,"RESOURCES");
 			property = XMLHandler.getTagValue(stepnode,"PROPERTY");
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
+			chooseInput = XMLHandler.getTagValue(stepnode,"CHOOSEINPUT");
 			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
 			notMappedResources = "Y".equals(XMLHandler.getTagValue(stepnode, "NOTMAPPEDRESOURCES"));
@@ -159,6 +189,12 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 		if (property != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("PROPERTY", property));
 		}
+		if (resourcesProperties != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCESPROPERTIES", resourcesProperties));
+		}
+		if (resources != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCES", resources));
+		}
 		if (resource != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCE", resource));
 		}
@@ -167,6 +203,9 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 		}
 		if (browseOutputCSVFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename));
+		}
+		if (chooseInput != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("CHOOSEINPUT", chooseInput));
 		}
 		retVal.append("    ").append(XMLHandler.addTagValue("NOTMAPPEDRESOURCES", notMappedResources));
 		return retVal.toString();
@@ -178,6 +217,9 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			property = rep.getStepAttributeString(stepId, "PROPERTY");
 			resource = rep.getStepAttributeString(stepId, "RESOURCE");
+			resourcesProperties = rep.getStepAttributeString(stepId, "RESOURCESPROPERTIES");
+			resources = rep.getStepAttributeString(stepId, "RESOURCES");
+			chooseInput = rep.getStepAttributeString(stepId, "CHOOSEINPUT");
 			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
 			notMappedResources = rep.getStepAttributeBoolean(stepId, "NOTMAPPEDRESOURCES");
@@ -197,6 +239,12 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 			if (property != null) {
 				rep.saveStepAttribute(transformationId, stepId, "PROPERTY", property);
 			}
+			if (resourcesProperties != null) {
+				rep.saveStepAttribute(transformationId, stepId, "RESOURCESPROPERTIES", resourcesProperties);
+			}
+			if (resources != null) {
+				rep.saveStepAttribute(transformationId, stepId, "RESOURCES", resources);
+			}
 			if (resource != null) {
 				rep.saveStepAttribute(transformationId, stepId, "RESOURCE", resource);
 			}
@@ -206,6 +254,9 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 			if (browseOutputCSVFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTCSVFILENAME", browseOutputCSVFilename);
 			}
+			if (chooseInput != null) {
+				rep.saveStepAttribute(transformationId, stepId, "CHOOSEINPUT", chooseInput);
+			}
 			rep.saveStepAttribute(transformationId, stepId,
 	                "NOTMAPPEDRESOURCES", notMappedResources);
 		} catch (Exception e) {
@@ -214,6 +265,8 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 	}
 	
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
+		rowMeta.clear();
+		
 		ValueMetaInterface ResourceMeta = new ValueMetaString("");
 		ResourceMeta.setName("Resource");
 		ResourceMeta.setOrigin(origin);
