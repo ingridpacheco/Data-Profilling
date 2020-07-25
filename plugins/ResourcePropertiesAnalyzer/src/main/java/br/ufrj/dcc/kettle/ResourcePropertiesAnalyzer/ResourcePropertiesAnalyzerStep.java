@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowDataUtil;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
@@ -138,7 +140,7 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		data.notMappedProperties = notMapped;
 	}
 	
-	private void initializeOutputFiled() {
+	private void initializeOutputFiled(String resource) {
 		FileWriter CSVwriter;
 		FileWriter writer;
 		try {
@@ -150,13 +152,44 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 			data.bufferedWriter = new BufferedWriter(writer);
             data.bufferedWriter.write("The result of the analysis was:");
             data.bufferedWriter.newLine();
-            data.bufferedWriter.write(String.format("There are %s properties merging the template's properties and the resource's properties, in which %s are the %s's properties and %s are the %s's properties.", data.allProperties.size(), data.resourceProperties.size(), meta.getResource(), data.templateProperties.size(), meta.getTemplate()));
+            data.bufferedWriter.write(String.format("There are %s properties merging the template's properties and the resource's properties, in which %s are the %s's properties and %s are the template's properties.", data.allProperties.size(), data.resourceProperties.size(), resource, data.templateProperties.size()));
             data.bufferedWriter.newLine();
             data.bufferedWriter.write(String.format("Some of this properties, %s, are not in the template's properties. Also, some of them, %s, are not in the resource.", data.notMappedProperties.size(), data.missingProperties.size()));
             
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
+		}
+	}
+	
+	private void writeOutput(Object[] outputRow, String property, String resource) throws KettleStepException {
+		String isMapped = "Yes";
+		String isInResource = "Yes";
+		
+		if (data.notMappedProperties.contains(property)) {
+			isMapped = "No";
+		}
+		
+		if (data.missingProperties.contains(property)) {
+			isInResource = "No";
+		}
+		
+		if ((isInResource.equals("Yes") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties on Resource and Template")) || (isInResource.equals("Yes") && isMapped.equals("No") && meta.getWhichProperty().equals("Properties only on Resource")) || isInResource.equals("No") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties only on Template") || meta.getWhichProperty().equals("All")) {
+			try {
+				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(property, isMapped.toString(), isInResource.toString()), ',');
+				
+				data.bufferedWriter.newLine();
+				data.bufferedWriter.write(String.format("The property %s: Is in template? %s; Is in %s? %s", property, isMapped, resource, isInResource));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			outputRow[data.outputExistingPropertiesIndex] = property;
+			outputRow[data.outputNotMapedPropertiesIndex] = isMapped;
+			outputRow[data.outputMissingPropertiesIndex] = isInResource;
+			
+			putRow(data.outputRowMeta, outputRow);
 		}
 	}
 	
@@ -168,6 +201,21 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 		
 		if (inputRow == null) // no more input to be expected…
 		{
+			if (meta.getChooseInput().equals("Previous fields input")) {
+				this.logBasic("Transformation complete");
+				
+				try {
+					data.CSVwriter.flush();
+			        data.CSVwriter.close();
+			        
+					data.bufferedWriter.close();
+					this.logBasic("Output Files were written... ");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
 			setOutputDone();
 			return false;
 		}
@@ -180,77 +228,85 @@ public class ResourcePropertiesAnalyzerStep extends BaseStep implements StepInte
 			data.outputExistingPropertiesIndex = data.outputRowMeta.indexOfValue("Property");
 			data.outputNotMapedPropertiesIndex = data.outputRowMeta.indexOfValue( "Is property in template?" );
 			data.outputMissingPropertiesIndex = data.outputRowMeta.indexOfValue( "Is property in resource?" );
-			   
-			this.logBasic("Getting the template properties");
-		    data.templateProperties = getProperties();
-			data.templateProperties.remove(0);
-			
-			this.logBasic("Getting the resources' properties");
-			data.resourceProperties = getResourceProperties();
-			getAllProperties();
-			
-			this.logBasic("Output Files are being written... ");
-			initializeOutputFiled();
+			  
+			if (!meta.getChooseInput().equals("Previous fields input")) {
+				this.logBasic("Getting the template properties");
+			    data.templateProperties = getProperties();
+				data.templateProperties.remove(0);
+				
+				this.logBasic("Getting the resources' properties");
+				data.resourceProperties = getResourceProperties();
+				getAllProperties();
+				
+				this.logBasic("Output Files are being written... ");
+				initializeOutputFiled(meta.getResource());
+			}
 			
 		}
 		
 		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 3 );
 		
-		if (data.allProperties.size() > 0) {
+		if (meta.getChooseInput().equals("Previous fields input")) {
 			
+			String[] templateProperty = getInputRowMeta().getString(inputRow, meta.getTemplateProperties(), "").split(", ");
+			data.templateProperties = Arrays.asList(templateProperty);
 			
-			String property = data.allProperties.remove(0);
+			String resource = getInputRowMeta().getString(inputRow, meta.getInputResource(), "");
 			
-			this.logBasic(String.format("Writting the information from the property: %s", property));
+			String[] properties = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "").split(", ");
+			data.resourceProperties = Arrays.asList(properties);
 			
-			String isMapped = "Yes";
-			String isInResource = "Yes";
+			HashSet<String> allProperties = new HashSet<String>(Arrays.asList(templateProperty));
+			allProperties.addAll(Arrays.asList(properties));
+			data.allProperties = new ArrayList<String>(allProperties);
 			
-			if (data.notMappedProperties.contains(property)) {
-				isMapped = "No";
-			}
+			Set<String> missingProperties = new HashSet<String>(data.templateProperties); 
+			missingProperties.removeAll(data.resourceProperties);
+			data.missingProperties = new ArrayList<String>(missingProperties);
+			Set<String> notMappedProperties = new HashSet<String>(data.resourceProperties); 
+			notMappedProperties.removeAll(data.templateProperties);
+			data.notMappedProperties = new ArrayList<String>(notMappedProperties);
 			
-			if (data.missingProperties.contains(property)) {
-				isInResource = "No";
-			}
+			this.logBasic("Output Files are being written... ");
+			initializeOutputFiled(resource);
 			
-			if ((isInResource.equals("Yes") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties on Resource and Template")) || (isInResource.equals("Yes") && isMapped.equals("No") && meta.getWhichProperty().equals("Properties only on Resource")) || isInResource.equals("No") && isMapped.equals("Yes") && meta.getWhichProperty().equals("Properties only on Template") || meta.getWhichProperty().equals("All")) {
-				try {
-					CSVUtils.writeLine(data.CSVwriter, Arrays.asList(property, isMapped.toString(), isInResource.toString()), ',');
-					
-					data.bufferedWriter.newLine();
-					data.bufferedWriter.write(String.format("The property %s: Is in %s? %s; Is in %s? %s", property, meta.getTemplate(), isMapped, meta.getResource(), isInResource));
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			for (String property : allProperties) {
 				
-				outputRow[data.outputExistingPropertiesIndex] = property;
-				outputRow[data.outputNotMapedPropertiesIndex] = isMapped;
-				outputRow[data.outputMissingPropertiesIndex] = isInResource;
+				this.logBasic(String.format("Writting the information from the property: %s", property));
+				writeOutput(outputRow, property, resource);
 				
-				putRow(data.outputRowMeta, outputRow);
 			}
 			
 			return true;
 		}
 		else {
-			
-			this.logBasic("Transformation complete");
-			
-			try {
-				data.CSVwriter.flush();
-		        data.CSVwriter.close();
-		        
-				data.bufferedWriter.close();
-				this.logBasic("Output Files were written... ");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (data.allProperties.size() > 0) {
+				
+				String property = data.allProperties.remove(0);
+				
+				this.logBasic(String.format("Writting the information from the property: %s", property));
+				writeOutput(outputRow, property, meta.getResource());
+				
+				return true;
 			}
-			
-			setOutputDone();
-			return false;
+			else {
+				
+				this.logBasic("Transformation complete");
+				
+				try {
+					data.CSVwriter.flush();
+			        data.CSVwriter.close();
+			        
+					data.bufferedWriter.close();
+					this.logBasic("Output Files were written... ");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				setOutputDone();
+				return false;
+			}
 		}
 	}
 
