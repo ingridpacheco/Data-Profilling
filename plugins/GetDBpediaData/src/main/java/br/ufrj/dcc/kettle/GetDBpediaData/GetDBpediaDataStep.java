@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -406,6 +407,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			if (meta.getOption().equals("Template properties")) {
 				this.logBasic("Getting properties");
 				data.dataFound = getProperties();
+				Collections.sort(data.dataFound);
 			}
 			else {
 				if (meta.getOption().equals("Resource properties")) {
