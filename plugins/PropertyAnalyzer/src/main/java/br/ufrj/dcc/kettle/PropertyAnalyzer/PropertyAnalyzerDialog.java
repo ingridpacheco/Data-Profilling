@@ -281,7 +281,7 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 			}
 		});
 		
-		String chooseInputField = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.DBpediaField.Label");
+		String chooseInputField = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.ChooseInput.Label");
 		wChooseInput = appendComboVar(wProperty, defModListener, cpt, chooseInputField);
 		wChooseInput.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
