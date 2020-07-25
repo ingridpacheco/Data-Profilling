@@ -6,6 +6,8 @@ package br.ufrj.dcc.kettle.ResourceInputAnalyzer;
 import java.io.IOException;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.ModifyEvent;
@@ -155,8 +157,13 @@ public class ResourceInputAnalyzerDialog extends BaseStepDialog implements StepD
 	}
 	
 	private Control buildContents(Control lastControl, ModifyListener defModListener) {
+		CTabFolder wTabFolder = swthlp.appendTabFolder(shell, lastControl, 90);
+		CTabItem item = new CTabItem(wTabFolder, SWT.NONE);
+		item.setText(BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.Tab.DBpediaFields"));
+		Composite cpt = swthlp.appendComposite(wTabFolder, lastControl);
+		
 		String inputGroupLabel = BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.InputFields.Label");
-		wInputGroup = swthlp.appendGroup(shell, lastControl, inputGroupLabel);
+		wInputGroup = swthlp.appendGroup(cpt, null, inputGroupLabel);
 		String DBpediaLabel = BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.DBpediaField.Label");
 		wDBpedia = appendComboVar(wInputGroup, defModListener, wInputGroup, DBpediaLabel);
 		wDBpedia.addFocusListener(new FocusListener() {
@@ -186,9 +193,14 @@ public class ResourceInputAnalyzerDialog extends BaseStepDialog implements StepD
 			}
 		});
 		
+		item.setControl(cpt);
+		item = new CTabItem(wTabFolder, SWT.NONE);
+		item.setText(BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.Tab.InputFields"));
+		cpt = swthlp.appendComposite(wTabFolder, lastControl);
+		
 		String browseLabel = BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.BrowseField.Label");
 		String browseButtonLabel = BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.Btn.Browse");
-		wBrowse = textVarWithButton(wInputGroup, wTemplate, browseLabel,
+		wBrowse = textVarWithButton(cpt, null, browseLabel,
 				defModListener, browseButtonLabel, new SelectionAdapter() {
 					public void widgetSelected(SelectionEvent e) {
 						fileDialogFunction(SWT.OPEN, new String[] { "*.csv; *.CSV" },
@@ -196,8 +208,13 @@ public class ResourceInputAnalyzerDialog extends BaseStepDialog implements StepD
 					}
 				});
 		
+		item.setControl(cpt);
+		item = new CTabItem(wTabFolder, SWT.NONE);
+		item.setText(BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.Tab.OutputFields"));
+		cpt = swthlp.appendComposite(wTabFolder, lastControl);
+		
 		String outputLabel = BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.OutputFields.Label");
-		wOutputGroup = swthlp.appendGroup(shell, wInputGroup, outputLabel);
+		wOutputGroup = swthlp.appendGroup(cpt, null, outputLabel);
 		String outputReportLabel = BaseMessages.getString(PKG, "ResourceInputAnalyzerStep.OutputReport.Label");
 		wOutputBrowse = textVarWithButton(wOutputGroup, wOutputGroup, outputReportLabel,
 				defModListener, browseButtonLabel, new SelectionAdapter() {
@@ -215,7 +232,11 @@ public class ResourceInputAnalyzerDialog extends BaseStepDialog implements StepD
 					}
 				});
 
-		return wOutputGroup;
+		item.setControl(cpt);
+		
+		wTabFolder.setSelection(0);
+
+		return wTabFolder;
 	}
 	
 	@Override
