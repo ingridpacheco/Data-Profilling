@@ -192,7 +192,7 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		item.setText(BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.Tab.InputFields"));
 		Composite cpt = swthlp.appendComposite(wTabFolder, lastControl);
 		
-		String chooseInputField = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.DBpediaField.Label");
+		String chooseInputField = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.ChooseInput.Label");
 		wChooseInput = appendComboVar(null, defModListener, cpt, chooseInputField);
 		wChooseInput.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
