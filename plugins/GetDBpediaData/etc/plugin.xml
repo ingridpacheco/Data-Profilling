@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <plugin
    id="GetDBpediaData"
-   iconfile="iconTemplatePropertyAnalyzer.png"
+   iconfile="iconGetDBpediaData.png"
    description="GetDBpediaData"
-   tooltip="Calculates the completeness percentages of every template's properties"
+   tooltip="Retrieves the chosen DBpedia data"
    category="ETL4Profiling"
    classname="br.ufrj.dcc.kettle.GetDBpediaData.GetDBpediaDataMeta">
    <libraries>
@@ -30,7 +30,7 @@
     <description locale="pt_BR">Get DBpedia Data</description>
    </localized_description>
    <localized_tooltip>
-     <tooltip locale="en_US">Calculates the completeness percentages of every template's properties</tooltip>
-    <tooltip locale="pt_BR">Calcula o percentual de completude de todas as propriedades do template</tooltip>
+     <tooltip locale="en_US">Retrieves the chosen DBpedia data</tooltip>
+    <tooltip locale="pt_BR">Entrega o dado escolhido da DBpedia</tooltip>
    </localized_tooltip>
 </plugin>
