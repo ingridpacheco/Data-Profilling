@@ -287,16 +287,10 @@ public class TemplateResourceInputAnalyzerStep extends BaseStep implements StepI
 		
 		this.logBasic(String.format("Writting the information from the resource: %s", resourceName));
 		
-		String isOnDBpedia = "";
+		String isOnDBpedia = data.resourcesFound.contains(resourceName) ? "Yes" : "No";
 		
-		if (data.resourcesFound.contains(resourceName)) {
-			isOnDBpedia = "Yes";
-		}
-		else {
-			isOnDBpedia = "No";
-		}
-		
-		if ((isOnDBpedia.equals("Yes") && meta.getResource().equals("Resources on DBpedia")) || (isOnDBpedia.equals("No") && meta.getResource().equals("Resources missing in DBpedia")) || meta.getResource().equals("All")) {
+		if ((isOnDBpedia.equals("Yes") && meta.getResource().equals("Resources on DBpedia")) || (isOnDBpedia.equals("No") && 
+				meta.getResource().equals("Resources missing in DBpedia")) || meta.getResource().equals("All")) {
 			
 			try {
 				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(resourceName, isOnDBpedia), ',');
