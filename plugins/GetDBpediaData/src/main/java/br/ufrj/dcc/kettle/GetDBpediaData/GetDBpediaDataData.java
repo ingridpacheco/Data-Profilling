@@ -1,5 +1,6 @@
 package br.ufrj.dcc.kettle.GetDBpediaData;
 
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -32,8 +33,13 @@ public class GetDBpediaDataData extends BaseStepData implements StepDataInterfac
 	List<String> resourceProperties = new ArrayList<>();
 	List<String> propertyValues = new ArrayList<>();
 	List<String> propertyTypes = new ArrayList<>();
+	Map<String, List<String>> propertyParameters = new Hashtable<String, List<String>>();
+	Map<String, Map<String, List<String>>> cacheResourceProperties = new Hashtable<String, Map<String, List<String>>>();
 	
 	FileWriter CSVwriter;
+	FileWriter CSVOutput;
+	BufferedWriter bufferedWriter;
+	Boolean isCached;
 	
 	public GetDBpediaDataData() {
 		super();

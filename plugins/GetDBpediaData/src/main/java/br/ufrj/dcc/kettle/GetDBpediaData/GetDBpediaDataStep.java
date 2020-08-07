@@ -3,12 +3,17 @@
 */
 package br.ufrj.dcc.kettle.GetDBpediaData;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -165,7 +170,9 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 				String resourceProperty = properties.get(i).text().split(":")[1];
 				if (!data.resourceProperties.contains(resourceProperty)) {
 					String propertyValue = values.get(i).text();
-					getFormatedValue(resource, resourceProperty, propertyValue);				}
+					getFormatedValue(resource, resourceProperty, propertyValue);
+					cacheProperty(resourceProperty);
+				}
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -280,11 +287,30 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		}
 	}
 	
-	private boolean writeResourceProperty(Object[] outputRow) throws KettleStepException {
+	private void cacheProperty(String property) throws IOException {
+		CSVUtils.writeLine(data.CSVOutput, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), property, data.resourceName, propertyValue, type), ',');
+	}
+	
+	private void getCachedProperties(String resourceName) {
+		data.resourceProperties = data.cacheResourceProperties.get(resourceName).get("properties");
+		data.propertyValues = data.cacheResourceProperties.get(resourceName).get("values");
+		data.propertyTypes = data.cacheResourceProperties.get(resourceName).get("types");
+	}
+	
+	private boolean writeResourceProperty(Object[] outputRow) throws KettleStepException, InterruptedException {
 			if (data.dataFound.size() > 0 || data.resourceProperties.size() > 0) {
 				if (data.resourceProperties.size() == 0) {
 					data.resourceName = data.dataFound.remove(0);
-					getResourceProperties(data.resourceName);
+					if (!data.isCached || meta.getOption().equals("Resource properties")) {
+						getResourceProperties(data.resourceName);
+						TimeUnit.SECONDS.sleep(1);
+					}
+					else {
+						getCachedProperties(data.resourceName);
+					}
+					if (data.resourceProperties.size() == 0) {
+						return true;
+					}
 				}
 				String property = data.resourceProperties.remove(0);
 				String value = data.propertyValues.remove(0);
@@ -292,7 +318,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 				this.logBasic(String.format("Writting the information from: %s", data.resourceName));
 				
 				try {
-	            	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), property, data.resourceName, value, propertyType), ',');
+					CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), property, data.resourceName, value, propertyType), ',');
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -314,6 +340,10 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 				try {
 					data.CSVwriter.flush();
 					data.CSVwriter.close();
+					if (meta.getOption().equals("Template resources properties") && !data.isCached) {
+						data.CSVOutput.flush();
+						data.CSVOutput.close();
+					}
 					this.logBasic("Output Files were written... ");
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -331,7 +361,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			this.logBasic(String.format("Writting the information from: %s", dataName));
 			
 			try {
-            	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), dataName), ',');
+				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(), meta.getTemplate(), dataName), ',');
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -363,6 +393,72 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			setOutputDone();
 			return false;
 		}
+	}
+	
+	private boolean hasCache() {
+		BufferedReader csvReader;
+		Boolean hasValues = true;
+		Integer line = 0;
+		try {
+			String fileName = String.format("resources_%s_%s.csv",meta.getDBpedia(), getTemplateName(meta.getTemplate()));
+			String filePath = String.format("%s/plugins/steps/GetDBpediaData",System.getProperty("user.dir"));
+			File file = new File(filePath, fileName);
+			csvReader = new BufferedReader(new FileReader(file));
+			String row;
+			while ((row = csvReader.readLine()) != null) {
+				if (line != 0) {
+					this.logBasic(row);
+					String[] rowList = row.split(",");
+					String property = rowList[2];
+					String resource = rowList[3];
+					String value = rowList[4];
+					String type = rowList[5];
+					
+					if (!data.dataFound.contains(resource)) {
+						data.dataFound.add(resource);
+					}
+					
+					Map<String, List<String>> propertyParameters = new Hashtable<String, List<String>>();
+					List<String> propertyList = new ArrayList<String>();
+					List<String> valuesList = new ArrayList<String>();
+					List<String> typeList = new ArrayList<String>();
+					
+					if (data.cacheResourceProperties.containsKey(resource)) {
+						propertyParameters = data.cacheResourceProperties.get(resource);
+						propertyList = propertyParameters.get("properties");
+						valuesList = propertyParameters.get("values");
+						typeList = propertyParameters.get("types");
+					}
+					
+					propertyList.add(property);
+					valuesList.add(value);
+					typeList.add(type);
+					
+					propertyParameters.put("properties", propertyList);
+					propertyParameters.put("values", valuesList);
+					propertyParameters.put("types", typeList);
+					
+					data.cacheResourceProperties.put(resource, propertyParameters);
+				}
+				line += 1;
+			}
+			csvReader.close();
+		} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+		} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+		}
+		if (line <= 1) {
+			hasValues = false;
+		}
+		data.isCached = hasValues;
+		return hasValues;
+	}
+	
+	private String getTemplateName(String template) {
+		return template.replaceAll(" ", "").replaceAll("/", "");
 	}
 	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
@@ -403,13 +499,33 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 					data.dataFound.add(meta.getResource());
 				}
 				else {
-					if (meta.getDBpedia().equals("pt") || meta.getDBpedia().equals("fr") || meta.getDBpedia().equals("ja")) {
-				    	this.logBasic("Getting the resources");
-				    	getResources();
-				    }
-				    if (meta.getNotMappedResources() == true) {
-				    	this.logBasic("Getting not mapped resources");
-				    	getNotMappedResources();
+					if (meta.getOption().equals("Template resources") || !hasCache()) {
+						if (meta.getOption().equals("Template resources properties")) {
+							try {
+								String fileName = String.format("resources_%s_%s.csv",meta.getDBpedia(), getTemplateName(meta.getTemplate()));
+								String filePath = String.format("%s/plugins/steps/GetDBpediaData",System.getProperty("user.dir"));
+								File file = new File(filePath, fileName);
+								if (file.exists()) {
+									data.CSVOutput = new FileWriter(file, true);
+								}
+								else {
+									file.createNewFile();
+									data.CSVOutput = new FileWriter(file);
+								}
+								CSVUtils.writeLine(data.CSVOutput, Arrays.asList("DBpedia Version", "Template", "Property", "Resource", "Value", "Type"), ',');
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						}
+						if (meta.getDBpedia().equals("pt") || meta.getDBpedia().equals("fr") || meta.getDBpedia().equals("ja")) {
+					    	this.logBasic("Getting the resources");
+					    	getResources();
+					    }
+					    if (meta.getNotMappedResources() == true) {
+					    	this.logBasic("Getting not mapped resources");
+					    	getNotMappedResources();
+						}
 					}
 				}
 			}
@@ -433,7 +549,12 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			}
 			else {
 				outputRow = RowDataUtil.resizeArray( inputRow, 6 );
-				return writeResourceProperty(outputRow);
+				try {
+					return writeResourceProperty(outputRow);
+				} catch (KettleStepException | InterruptedException e) {
+					// TODO Auto-generated catch block
+					return true;
+				}
 			}
 		}
 	}
