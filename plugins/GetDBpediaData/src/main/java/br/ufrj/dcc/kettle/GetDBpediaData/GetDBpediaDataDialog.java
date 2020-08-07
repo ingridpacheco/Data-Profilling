@@ -419,9 +419,8 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 	}
 	
 	private void chooseOutput(String choice) {
-		Boolean enabled = (choice.equals("Resource properties")) ? true : false;
-		wGetNotMappedResources.setEnabled(enabled);
-		wResourceField.setEnabled(enabled);
+		wGetNotMappedResources.setEnabled(!choice.equals("Template properties"));
+		wResourceField.setEnabled(choice.equals("Resource properties"));
 	}
 	
 	@Override
@@ -555,7 +554,7 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 				wOutputCSVBrowse.setText(GetDBpediaData.getOutputCSVFile());
 			if (GetDBpediaData.getResource() != null)
 				wResourceField.setText(GetDBpediaData.getResource());
-			if (GetDBpediaData.getResource() != null)
+			if (GetDBpediaData.getOption() != null)
 				wOption.setText(GetDBpediaData.getOption());
 			wGetNotMappedResources.setSelection(GetDBpediaData.getNotMappedResources());
 			chooseOutput(wOption.getText());
