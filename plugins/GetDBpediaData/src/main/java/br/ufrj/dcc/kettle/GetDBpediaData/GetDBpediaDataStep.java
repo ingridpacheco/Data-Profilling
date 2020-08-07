@@ -50,6 +50,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 	private GetDBpediaDataMeta meta;
 	private String type;
 	private String propertyValue;
+	private Url urls;
 	
 	public GetDBpediaDataStep(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr, TransMeta transMeta, Trans trans) {
 		super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
@@ -58,6 +59,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 	public boolean init(StepMetaInterface smi, StepDataInterface sdi) {
 		meta = (GetDBpediaDataMeta) smi;
 		data = (GetDBpediaDataData) sdi;
+		urls = new Url(meta);
 		
 		return super.init(smi, sdi);
 	}
@@ -80,17 +82,14 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 	}
 	
 	public void getNotMappedResources() throws KettleStepException {
-		String DBpedia = meta.getDBpedia();
-		String template = meta.getTemplate();
-		
 		try {
-			String url = String.format("https://tools.wmflabs.org/templatecount/index.php?lang=%s&namespace=10&name=%s#bottom", DBpedia, template);
-			this.logBasic(String.format("Url: %s", url));
-			Document doc = Jsoup.connect(url).get();
+			String notMapedResourceUrl = this.urls.notMapedResourcesUrl;
+			this.logBasic(String.format("NotMapedResourceUrl: %s", notMapedResourceUrl));
+			Document doc = Jsoup.connect(notMapedResourceUrl).get();
 			Integer quantity = Integer.parseInt(doc.select("form + h3 + p").text().split(" ")[0]);
 			this.logBasic(String.format("Quantity %s", quantity));
 			
-			String resourcesUrl = String.format("https://%s.wikipedia.org/wiki/Special:WhatLinksHere/Template:%s?limit=2000&namespace=0", DBpedia, template);
+			String resourcesUrl = this.urls.resourcesUrl;
 			Document resourcesDoc = Jsoup.connect(resourcesUrl).get();
 			Elements resources = resourcesDoc.select("li a[href^=\"/wiki/\"]");
 			Element newPage = resourcesDoc.select("p ~ a[href^=\"/w/index.php?\"]").first();
@@ -104,7 +103,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 				while (timesDivided > 0) {
 					String newUrl = newPage.attr("href");
 					newUrl = newUrl.replaceAll("amp;", "");
-					String otherPageUrl = String.format("https://%s.wikipedia.org%s", DBpedia, newUrl);
+					String otherPageUrl = this.urls.getNextResourceUrl(newUrl);
 					Document moreResourceDocs = Jsoup.connect(otherPageUrl).get();
 					resources = moreResourceDocs.select("li a[href^=\"/wiki/\"]");
 					newPage = moreResourceDocs.select("p ~ a[href^=\"/w/index.php?\"]").get(1);
@@ -123,7 +122,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		List<String> templateProperties = new ArrayList<>();
 		
 		try {
-			String url = String.format("http://mappings.dbpedia.org/index.php/Mapping_%s:%s", meta.getDBpedia(), meta.getTemplate().replaceAll(" ", "_"));
+			String url = this.urls.templatePropertiesUrl;
 			Document doc = Jsoup.connect(url).get();
 			Elements properties = doc.select("td[width=\"400px\"]");
 			
@@ -157,7 +156,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		String DBpedia = meta.getDBpedia();
 		
 		try {
-			String url = String.format("http://%s.dbpedia.org/resource/%s", DBpedia, resource.replace(" ", "_"));
+			String url = this.urls.getResourceUrl(resource.replace(" ", "_"));
 			Document doc = Jsoup.connect(url).get();
 			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
 			Elements values = doc.select(String.format("label[class=\"c1\"]:has(a[href^=\"http://%s.dbpedia.org/property\"]) + div[class^=\"c2 value\"]", DBpedia));
@@ -222,10 +221,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 	
 	private void getSparqlResources(String templateDefinition) {
 		String DBpedia = meta.getDBpedia();
-		String template = meta.getTemplate().replace(" ", "_");
-		String templateUrl = String.format("http://%s.dbpedia.org/resource/%s:%s", DBpedia, templateDefinition, template);
-		
-		Integer limit = 500;
+		String templateUrl = this.urls.getTemplateUrl(templateDefinition);
 		
 		String queryStr =
 				"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
@@ -237,7 +233,7 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		
 		ParameterizedSparqlString pss = new ParameterizedSparqlString();
 		pss.setCommandText(queryStr);
-		pss.setIri("dbpUrl", String.format("http://%s.dbpedia.org/property/", DBpedia));
+		pss.setIri("dbpUrl", this.urls.dbpUrl);
 		pss.setIri("templateUrl", templateUrl);
 		pss.setLiteral("language", DBpedia);
 		
@@ -251,16 +247,10 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
             ResultSet rs = qexec.execSelect();
             
             while (rs.hasNext()) {
-            	limit = limit - 1;
-            	
             	QuerySolution resource = rs.next();
             	String resourceName = resource.getLiteral("name").getString();
             	this.logBasic(String.format("Resource: %s", resourceName));
             	data.dataFound.add(resourceName);
-            	if (limit == 0) {
-            		TimeUnit.MINUTES.sleep(3);
-            		limit = 500;
-            	}
             }
             ResultSetFormatter.out(System.out, rs, query);
         } catch (Exception e) {
@@ -403,7 +393,6 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		      
 			this.logBasic("Getting the template properties' informations");
 			
-			this.logBasic(meta.getOption());
 			if (meta.getOption().equals("Template properties")) {
 				this.logBasic("Getting properties");
 				data.dataFound = getProperties();
