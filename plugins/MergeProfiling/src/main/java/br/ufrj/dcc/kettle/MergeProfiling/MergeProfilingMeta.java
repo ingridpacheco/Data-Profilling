@@ -293,6 +293,8 @@ public class MergeProfilingMeta extends BaseStepMeta implements StepMetaInterfac
 	}
 	
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
+		rowMeta.clear();
+		
 		ValueMetaInterface SubjectMeta = new ValueMetaString("Subject");
 		SubjectMeta.setOrigin(origin);
 		rowMeta.addValueMeta(SubjectMeta);
