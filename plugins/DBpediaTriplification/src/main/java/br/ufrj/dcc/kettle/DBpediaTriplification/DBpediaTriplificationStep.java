@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -64,10 +65,8 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
 		
 		try {
 			String url = String.format("https://tools.wmflabs.org/templatecount/index.php?lang=%s&namespace=10&name=%s#bottom", DBpedia, template);
-			this.logBasic(String.format("Url: %s", url));
 			Document doc = Jsoup.connect(url).get();
 			Integer quantity = Integer.parseInt(doc.select("form + h3 + p").text().split(" ")[0]);
-			this.logBasic(String.format("Quantity %s", quantity));
 			
 			String resourcesUrl = String.format("https://%s.wikipedia.org/wiki/Special:WhatLinksHere/Template:%s?limit=2000&namespace=0", DBpedia, template);
 			Document resourcesDoc = Jsoup.connect(resourcesUrl).get();
@@ -133,7 +132,6 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
 		String DBpedia = meta.getDBpedia();
 		String template = meta.getTemplate().replace(" ", "_");
 		String templateUrl = String.format("http://%s.dbpedia.org/resource/%s:%s", DBpedia, templateDefinition, template);
-		Integer limit = 500;
 		
 		String queryStr =
 				"PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
@@ -159,18 +157,13 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
             ResultSet rs = qexec.execSelect();
             
             while (rs.hasNext()) {
-            	limit = limit - 1;
-            	
             	QuerySolution resource = rs.next();
             	subject = resource.getLiteral("name").getString();
             	this.logBasic(String.format("Resource: %s", subject));
             	DBpediaresources.add(subject);
             	getResourceProperties();
             	
-            	if (limit == 0) {
-            		TimeUnit.MINUTES.sleep(3);
-            		limit = 500;
-            	}
+            	TimeUnit.SECONDS.sleep(1);
             }
             ResultSetFormatter.out(System.out, rs, query);
         } catch (Exception e) {
@@ -178,18 +171,48 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
         }
 	}
 	
+	private String getMapValues(String DBpedia) {
+		Map<String, String> mapValueExp = new HashMap<String, String>();
+		mapValueExp.put("pt", "label[class=\"c1\"]:has(a[href^=\"http://pt.dbpedia.org/property\"]) + div[class^=\"c2 value\"]");
+		mapValueExp.put("ja", "span[prefix=\"prop-ja: \"], a[prefix=\"prop-ja: \"]");
+		
+		return mapValueExp.get(DBpedia);
+	}
+	
 	private void getResourceProperties() {
 		String DBpedia = meta.getDBpedia();
 		String resource = subject.replace(" ", "_");
+		String regexpValue = getMapValues(DBpedia);
+		
+		Set<String> resources = new HashSet<String>();
+		Integer counter = 0;
 		
 		try {
 			String url = String.format("http://%s.dbpedia.org/resource/%s", DBpedia, resource);
 			Document doc = Jsoup.connect(url).get();
 			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
-			Elements values = doc.select(String.format("label[class=\"c1\"]:has(a[href^=\"http://%s.dbpedia.org/property\"]) + div[class^=\"c2 value\"]", DBpedia));
+			Elements values = doc.select(regexpValue);
 	
+			
 			for (int i = 0; i < properties.size(); i++) {
-				String resourceProperty = properties.get(i).text().split(":")[1];
+				String resourceProperty;
+				if (DBpedia.equals("ja") && values.get(i).toString().matches("^(a).*$")) {
+					String actualProperty = values.get(i).attributes().get("rel").split("prop-ja:")[1];
+					if (resources.contains(actualProperty)) {
+						resourceProperty = actualProperty;
+					}
+					else {
+						resourceProperty = properties.get(counter).text().split(":")[1];
+						resources.add(resourceProperty);
+						counter += 1;
+					}
+				}
+				else {
+					resourceProperty = properties.get(counter).text().split(":")[1];
+					resources.add(resourceProperty);
+					counter += 1;
+				}
+				
 				String propertyUrl = String.format("http://%s.dbpedia.org/property/%s", DBpedia, resourceProperty);
 				String propertyValue = values.get(i).text();
 				
@@ -203,15 +226,34 @@ public class DBpediaTriplificationStep extends BaseStep implements StepInterface
 	}
 	
 	private void getTriple(String resourceUrl, String propertyUrl, String value) {
-		if (value.matches("^(dbr\\W).*$") && value.contains(" ")) {
-			String[] objects = value.split(" ");
-			for (String obj : objects) {
-				data.triples.add((String.format("<%s> <%s> %s", resourceUrl, propertyUrl, formatValue(obj))));
+		if (meta.getDBpedia() == "pt") {
+			if (value.matches("^(dbr\\W).*$") && value.contains(" ")) {
+				String[] objects = value.split(" ");
+				for (String obj : objects) {
+					data.triples.add((String.format("<%s> <%s> %s", resourceUrl, propertyUrl, formatValue(obj))));
+				}
+			}
+			else {
+				data.triples.add((String.format("<%s> <%s> %s", resourceUrl, propertyUrl, formatValue(value))));
 			}
 		}
 		else {
-			data.triples.add((String.format("<%s> <%s> %s", resourceUrl, propertyUrl, formatValue(value))));
+			data.triples.add((String.format("<%s> <%s> %s", resourceUrl, propertyUrl, formatJapaneseValue(value))));
 		}
+	}
+	
+	private String formatJapaneseValue(String value) {
+		if (value.matches("^-?\\d*(\\.\\d+)?$")) {
+			String type = value.matches("^-?\\d*$") ? "integer" : "float"; 
+			return String.format("\"%s\"^^<http://www.w3.org/2001/XMLSchema#%s> .", value, type);
+		}
+		if (value.matches("^(dbpedia-ja\\W).*$") || value.matches("^(template-ja\\W).*$")) {
+			String expression = value.matches("^(dbpedia-ja\\W).*$") ? "resource/" : "resource/Template:";
+			String newValue = value.matches("^(dbpedia-ja\\W).*$") ? value.split("dbpedia-ja:")[1] : value.split("template-ja:")[1];
+			String resourceUrl = String.format("http://%s.dbpedia.org/%s%s", meta.getDBpedia(), expression, newValue);
+			return String.format("<%s> .", resourceUrl);
+		}
+		return String.format("\"%s\"@%s .", value, meta.getDBpedia());
 	}
 	
 	private String formatValue(String value) {
