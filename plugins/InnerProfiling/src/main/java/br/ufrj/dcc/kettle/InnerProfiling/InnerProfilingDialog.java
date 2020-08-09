@@ -260,17 +260,39 @@ public class InnerProfilingDialog extends BaseStepDialog implements StepDialogIn
 	}
 	
 	private void shouldInputCSV(boolean choice) {
-		wInputChoice.setEnabled(!choice);
-		wNTripleFieldName.setEnabled(!choice);
-		wSubject.setEnabled(!choice);
-		wPredicate.setEnabled(!choice);
+		if (!choice) {
+			wInputChoice.setEnabled(true);
+			if (wInputChoice.getText().equals("N-Triple")) {
+				wNTripleFieldName.setEnabled(true);
+				wSubject.setEnabled(false);
+				wPredicate.setEnabled(false);
+			}
+			else {
+				wNTripleFieldName.setEnabled(false);
+				wSubject.setEnabled(true);
+				wPredicate.setEnabled(true);
+			}
+		}
+		else {
+			wInputChoice.setEnabled(false);
+			wNTripleFieldName.setEnabled(false);
+			wSubject.setEnabled(false);
+			wPredicate.setEnabled(false);
+		}
 	}
 	
 	private void chooseNTripleOrFields(String choice) {
-		Boolean enabled = (choice.equals("N-Triple")) ? true : false;
-		wNTripleFieldName.setEnabled(enabled);
-		wSubject.setEnabled(!enabled);
-		wPredicate.setEnabled(!enabled);
+		if (wIsInputCSV.getSelection()) {
+			wNTripleFieldName.setEnabled(false);
+			wSubject.setEnabled(false);
+			wPredicate.setEnabled(false);
+		}
+		else {
+			Boolean enabled = (choice.equals("N-Triple")) ? true : false;
+			wNTripleFieldName.setEnabled(enabled);
+			wSubject.setEnabled(!enabled);
+			wPredicate.setEnabled(!enabled);
+		}
 	}
 	
 	private String[] getFields(int type) {
