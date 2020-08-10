@@ -192,8 +192,23 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		item.setText(BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.Tab.InputFields"));
 		Composite cpt = swthlp.appendComposite(wTabFolder, lastControl);
 		
+		String DBpediaFieldName = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.DBpediaField.Label");
+		wDBpedia = appendComboVar(null, defModListener, cpt, DBpediaFieldName);
+		wDBpedia.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wDBpedia.setItems(DBpediaValues);
+				busy.dispose();
+			}
+		});
+		
 		String chooseInputField = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.ChooseInput.Label");
-		wChooseInput = appendComboVar(null, defModListener, cpt, chooseInputField);
+		wChooseInput = appendComboVar(wDBpedia, defModListener, cpt, chooseInputField);
 		wChooseInput.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -268,22 +283,8 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		String secondInputFieldName = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.SecondInputFields.Label");
 		wSecondInputGroup = swthlp.appendGroup(cpt, wFirstInputGroup, secondInputFieldName);
 		
-		String DBpediaFieldName = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.DBpediaField.Label");
-		wDBpedia = appendComboVar(wSecondInputGroup, defModListener, wSecondInputGroup, DBpediaFieldName);
-		wDBpedia.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				shell.setCursor(null);
-				wDBpedia.setItems(DBpediaValues);
-				busy.dispose();
-			}
-		});
 		String templateFieldName = BaseMessages.getString(PKG, "TemplatePropertyAnalyzerStep.TemplateField.Label");
-		wTemplate = appendComboVar(wDBpedia, defModListener, wSecondInputGroup, templateFieldName);
+		wTemplate = appendComboVar(wSecondInputGroup, defModListener, wSecondInputGroup, templateFieldName);
 		wTemplate.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -365,9 +366,9 @@ public class TemplatePropertyAnalyzerDialog extends BaseStepDialog implements St
 		wResource.setEnabled(enabled);
 		wTemplateProperties.setEnabled(enabled);
 		wResourceProperties.setEnabled(enabled);
-		wDBpedia.setEnabled(!enabled);
 		wTemplate.setEnabled(!enabled);
 		wGetNotMappedResources.setEnabled(!enabled);
+		wOrder.setEnabled(!enabled);
 	}
 	
 	private String[] getFields(int type) {

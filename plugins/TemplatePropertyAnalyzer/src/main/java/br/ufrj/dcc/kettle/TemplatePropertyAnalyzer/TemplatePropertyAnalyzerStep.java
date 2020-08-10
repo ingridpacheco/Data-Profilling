@@ -170,21 +170,38 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	
 			for (int i = 0; i < properties.size(); i++) {
 				String resourceProperty = properties.get(i).text().split(":")[1];
-				if (!resourceProperties.contains(resourceProperty)) {
-					resourceProperties.add(resourceProperty);
-					if (!data.properties.containsKey(resourceProperty)) {
-						data.properties.put(resourceProperty, 1);
-					}
-					else {
-						Integer quantity = data.properties.get(resourceProperty);
-						data.properties.put(resourceProperty, quantity + 1);
-					}
-				}
+//				if (!resourceProperties.contains(resourceProperty)) {
+//					resourceProperties.add(resourceProperty);
+//					if (!data.propertiesValues.containsKey(resourceProperty)) {
+//						data.propertiesValues.put(resourceProperty, 1);
+//					}
+//					else {
+//						Integer quantity = data.propertiesValues.get(resourceProperty);
+//						data.propertiesValues.put(resourceProperty, quantity + 1);
+//					}
+//				}
+				resourceProperties.add(resourceProperty);
+				Integer actualValue = data.propertiesExistingResources.containsKey(resourceProperty) ? data.propertiesExistingResources.get(resourceProperty) : 0;
+				data.propertiesExistingResources.put(resourceProperty, actualValue + 1);
 			}
+			Set<String> missingProperties = getMissingProperties(new HashSet<String>(resourceProperties), new HashSet<String>(data.properties));
+			for (String property: missingProperties) {
+				Integer actualValue = data.propertiesMissingResources.containsKey(property) ? data.propertiesMissingResources.get(property) : 0;
+				data.propertiesMissingResources.put(property, actualValue + 1);
+			}
+			
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public Set<String> getMissingProperties(Set<String> resourceProperties, Set<String> templateProperties){
+		
+		Set<String> missingProperties = new HashSet<String>(templateProperties);
+		missingProperties.removeAll(resourceProperties);
+		return missingProperties;
 	}
 	
 	public void getResources() {
@@ -269,34 +286,34 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 		return missingProperties;
 	}
 	
-	public void checkPropertiesInResource(String resource) {
-		String DBpedia = meta.getDBpedia();
-		List<String> templateProperties = data.templateProperties;
-		Map<String, Integer> allProperties = data.properties;
-		
-		resource = resource.replace(" ", "_");
-		try {
-			String url = String.format("http://%s.dbpedia.org/resource/%s", DBpedia, resource);
-			Document doc = Jsoup.connect(url).get();
-			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
-	
-			for (int i = 0; i < properties.size(); i++) {
-				String resourceProperty = properties.get(i).text();
-				if (templateProperties.contains(resourceProperty.split(":")[1])) {
-					if (allProperties.containsKey(resourceProperty.split(":")[1])) {
-						Integer value = allProperties.get(resourceProperty.split(":")[1]);
-						allProperties.put(resourceProperty.split(":")[1], value + 1);
-					}
-					else {
-						allProperties.put(resourceProperty.split(":")[1], 1);
-					}
-				}
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+//	public void checkPropertiesInResource(String resource) {
+//		String DBpedia = meta.getDBpedia();
+//		List<String> templateProperties = data.properties;
+//		Map<String, Integer> allProperties = data.propertiesValues;
+//		
+//		resource = resource.replace(" ", "_");
+//		try {
+//			String url = String.format("http://%s.dbpedia.org/resource/%s", DBpedia, resource);
+//			Document doc = Jsoup.connect(url).get();
+//			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
+//	
+//			for (int i = 0; i < properties.size(); i++) {
+//				String resourceProperty = properties.get(i).text();
+//				if (templateProperties.contains(resourceProperty.split(":")[1])) {
+//					if (allProperties.containsKey(resourceProperty.split(":")[1])) {
+//						Integer value = allProperties.get(resourceProperty.split(":")[1]);
+//						allProperties.put(resourceProperty.split(":")[1], value + 1);
+//					}
+//					else {
+//						allProperties.put(resourceProperty.split(":")[1], 1);
+//					}
+//				}
+//			}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//	}
 	
 	public Map<String, Integer> countMissingProperties(Map<String, Integer> missingPropertiesCount, List<String> missingProperties, List<String> allMissingProperties) {
 		for (int i = 0; i < missingProperties.size(); i++) {
@@ -313,6 +330,9 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	}
 	
 	public Float getPercentage(Integer insideResources, Integer total) {
+		if (total == 0)
+			return (float) 0;
+		
 		Float percentage = (insideResources.floatValue()/total.floatValue()) * 100;
 		return percentage;
 	}
@@ -328,42 +348,61 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	}
 	
 	private void getPropertiesInformation() {
-		data.templateProperties = getProperties();
+		data.properties = getProperties();
 	    getResourceQuantity();
 		
-		for(int i = 0; i < data.templateProperties.size(); i++) {
-			String property = data.templateProperties.get(i);
-			if (!data.properties.containsKey(property)) {
-				data.properties.put(property, 0);
-			}
-			Float percentage = getPercentage(data.properties.get(property), data.resources.size());
-			data.propertiesPercentage.put(property, percentage);
-		}
+	    for (String property : data.properties) {
+	    	data.totalExistingResources.addAll(data.templateResources);
+			Float completeness = getPercentage(new HashSet<>(data.propertiesExistingResources.get(property)).size(), data.resources.size());
+			data.propertiesCompletenessPercentage.put(property, completeness);
+	    }
+	    
+//		for(int i = 0; i < data.properties.size(); i++) {
+//			String property = data.properties.get(i);
+//			if (!data.propertiesValues.containsKey(property)) {
+//				data.propertiesValues.put(property, 0);
+//			}
+//			Float percentage = getPercentage(data.propertiesValues.get(property), data.resources.size());
+//			data.propertiesPercentage.put(property, percentage);
+//		}
+	}
+	
+	public Integer getTemplatePropertiesResources(List<String> resourceProperties, List<String> templateProperties) {
+		
+		Set<String> templatePropertiesResource = new HashSet<>();
+		
+		for (String property : resourceProperties) {
+            if(templateProperties.contains(property)) {
+            	templatePropertiesResource.add(property);
+            }
+        }
+		
+		return templatePropertiesResource.size();
 	}
 	
 	private void sortProperties() {
 		if (meta.getOrder().equals("Ascending")) {
-			data.propertiesPercentage = data.propertiesPercentage.entrySet()
+			data.propertiesCompletenessPercentage = data.propertiesCompletenessPercentage.entrySet()
 	                .stream()
 	                .sorted(Map.Entry.comparingByValue())
 	                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 			
-			Set<String> keys = data.propertiesPercentage.keySet();
+			Set<String> keys = data.propertiesCompletenessPercentage.keySet();
 			List<String> propertiesInOrder = new ArrayList<String>();
 			propertiesInOrder.addAll(keys);
-			data.templateProperties = propertiesInOrder;
+			data.properties = propertiesInOrder;
 			
 		}
 		if (meta.getOrder().equals("Descending")) {
-			data.propertiesPercentage = data.propertiesPercentage.entrySet()
+			data.propertiesCompletenessPercentage = data.propertiesCompletenessPercentage.entrySet()
 	                .stream()
 	                .sorted((Map.Entry.<String, Float>comparingByValue().reversed()))
 	                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 			
-			Set<String> keys = data.propertiesPercentage.keySet();
+			Set<String> keys = data.propertiesCompletenessPercentage.keySet();
 			List<String> propertiesInOrder = new ArrayList<String>();
 			propertiesInOrder.addAll(keys);
-			data.templateProperties = propertiesInOrder;
+			data.properties = propertiesInOrder;
 		}
 	}
 	
@@ -380,7 +419,7 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 			 
             data.bufferedWriter.write("The result of the analysis was:");
             data.bufferedWriter.newLine();
-            data.bufferedWriter.write(String.format("There are %s properties, some of which are not in all resources from this template.", data.templateProperties.size()));
+            data.bufferedWriter.write(String.format("There are %s properties, some of which are not in all resources from this template.", data.properties.size()));
             
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
@@ -389,16 +428,18 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	}
 	
 	private boolean writeFinalOutput(Object[] inputRow) throws KettleStepException {
-		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 4 );
+		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 6 );
 		
-		if (data.templateProperties.size() > 0) {
-			writeOutput(outputRow, data.templateProperties.remove(0));
+		if (data.properties.size() > 0) {
+			writeOutput(outputRow, data.properties.remove(0));
 			return true;
 		}
 		else {
 			Float percentage = getPercentage(data.totalQuantityOfResourcesThatHasTheProperty, data.totalOfResources);
+			outputRow[data.outputDBpediaIndex] = meta.getDBpedia();
 			outputRow[data.outputPropertyIndex] = "Total";
 			outputRow[data.outputInsideResourcesIndex] = data.totalQuantityOfResourcesThatHasTheProperty;
+			outputRow[data.outputMissingPropertiesIndex] = data.totalPropertiesMissingProperties;
 			outputRow[data.outputTotalIndex] = data.totalOfResources;
 			outputRow[data.outputPercentageIndex] = percentage;
 			this.logBasic("Transformation complete");
@@ -421,95 +462,133 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 		}
 	}
 	
-	private void writeOutput(Object[] outputRow, String templateProperty) throws KettleStepException {    
-		Float percentage = getPercentage(data.properties.get(templateProperty), data.resources.size());
+	private void writeOutput(Object[] outputRow, String templateProperty) throws KettleStepException {
+		Float percentage = data.propertiesCompletenessPercentage.get(templateProperty);
 		
-		this.logBasic(String.format("Writting the information from the property: %s", templateProperty));
-					
-		data.totalQuantityOfResourcesThatHasTheProperty += data.properties.get(templateProperty);
+		data.totalPropertiesExistingProperties = data.totalPropertiesExistingProperties + data.propertiesExistingResources.get(templateProperty);
+		data.totalPropertiesMissingProperties = data.totalPropertiesMissingProperties + data.propertiesMissingResources.get(templateProperty);
 		
         try {
-        	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(templateProperty, data.properties.get(templateProperty).toString(), String.valueOf(data.resources.size()), percentage.toString()), ',');
-        	
+        	CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(),templateProperty, data.propertiesExistingResources.get(templateProperty).toString(), data.propertiesMissingResources.get(templateProperty).toString(), String.format("%s", data.templateResources.size()), percentage.toString()), ',');
+
         	data.bufferedWriter.newLine();
-			data.bufferedWriter.write(String.format("The property %s is in %s resources from a total of %s resources, which leads to a completude percentage of %s.", templateProperty, data.properties.get(templateProperty), data.resources.size(), percentage));
+			data.bufferedWriter.write(String.format("The property %s is in %s resources, but %s template resources do not have it.", templateProperty, data.propertiesExistingResources.get(templateProperty), data.propertiesMissingResources.get(templateProperty)));
+			data.bufferedWriter.newLine();
+			data.bufferedWriter.write(String.format("As the template has %s resources, it leads to a completude percentage of %s.", data.templateResources.size(), percentage));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		
+        outputRow[data.outputDBpediaIndex] = meta.getDBpedia();
 		outputRow[data.outputPropertyIndex] = templateProperty;
-		outputRow[data.outputInsideResourcesIndex] = data.properties.get(templateProperty);
-		outputRow[data.outputTotalIndex] = data.resources.size();
+		outputRow[data.outputInsideResourcesIndex] = data.propertiesExistingResources.get(templateProperty);
+		outputRow[data.outputMissingPropertiesIndex] = data.propertiesMissingResources.get(templateProperty);
+		outputRow[data.outputTotalIndex] = data.templateResources.size();
 		outputRow[data.outputPercentageIndex] = percentage;
 		
 		putRow(data.outputRowMeta, outputRow);
 	}
 	
-	private void removeDuplicatedProperties() {
-		data.templateProperties = new ArrayList<>(
-			      new HashSet<>(data.templateProperties));
-	}
-	
 	private void getPropertiesCompleteness(Object[] inputRow) throws KettleValueException {
-		String[] templateProperties = getInputRowMeta().getString(inputRow, meta.getTemplateProperties(), "").split(", ");
-		data.templateProperties = new ArrayList<String>(Arrays.asList(templateProperties));
-		removeDuplicatedProperties();
 		
-		if (data.propertiesPercentage.size() == 0 && data.properties.size() == 0) {
-			initializePropertiesPercentage();
-		}
-		String resource = getInputRowMeta().getString(inputRow, meta.getResource(), "");
-		data.resources.add(resource);
-		String resourceProperty = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "");
-		if (data.templateProperties.contains(resourceProperty) && ((data.resourcesProperties.containsKey(resource) && !data.resourcesProperties.get(resource).contains(resourceProperty)) || !data.resourcesProperties.containsKey(resource))) {
-			HashSet<String> newResourceProperties = new HashSet<String>();
-			
-			if (data.resourcesProperties.containsKey(resource)) {
-				newResourceProperties = data.resourcesProperties.get(resource);
-			}
-			
-			newResourceProperties.add(resourceProperty);
-			data.resourcesProperties.put(resource, newResourceProperties);
-			
-			if (!data.properties.containsKey(resourceProperty)) {
-				data.properties.put(resourceProperty, 1);
-			}
-			else {
-				Integer quantity = data.properties.get(resourceProperty);
-				data.properties.put(resourceProperty, quantity + 1);
-			}
-		}
+		String[] templateResources = getInputRowMeta().getString(inputRow, meta.getResource(), "").split(", ");
+		data.templateResources = new ArrayList<String>(Arrays.asList(templateResources));
+		Set<String> templateResourcesSetList = new HashSet<String>(Arrays.asList(templateResources));; 
+		
+		String property = getInputRowMeta().getString(inputRow, meta.getTemplateProperties(), "");
+		data.property = property;
+		String resourcesPropertiesList = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "");
+		String[] resourcesProperties = (resourcesPropertiesList == null) ? new String[0] : resourcesPropertiesList.split(", ");
+		Set<String> resourcesPropertiesSetList = new HashSet<String>(Arrays.asList(resourcesProperties)); 
+		data.propertiesExistingResources.put(property, resourcesPropertiesSetList.size());
+		
+		data.totalExistingResources.addAll(templateResourcesSetList);
+		
+		Set<String> missingResources = getMissingResources(resourcesPropertiesSetList, templateResourcesSetList);
+		data.propertiesMissingResources.put(property, missingResources.size());
+		
+		Integer templatePropertiesResources = getTemplatePropertiesProperties(new ArrayList<String>(resourcesPropertiesSetList), new ArrayList<String>(templateResourcesSetList));
+		
+		Float completeness = getPercentage(templatePropertiesResources, templateResources.length);
+		data.propertiesCompletenessPercentage.put(property, completeness);
+//		insert(property, data, meta.getOrder());
+		
 	}
 	
-	public void initializePropertiesPercentage() {
-		for (String template : data.templateProperties) {
-			data.propertiesPercentage.put(template, (float) 0);
-			data.properties.put(template, 0);
-		}
+	public Set<String> getMissingResources(Set<String> resourceProperties, Set<String> templateResources){
+		
+		Set<String> missingProperties = new HashSet<String>(templateResources);
+		missingProperties.removeAll(resourceProperties);
+		return missingProperties;
 	}
 	
-	public void insert(String template){
+	public Set<String> getNotMappedResources(Set<String> resourceProperties, Set<String> templateResources) {
+		
+		Set<String> notMappedProperties = new HashSet<String>(resourceProperties);
+		notMappedProperties.removeAll(templateResources);
+		return notMappedProperties;
+		
+	}
+	
+	public Integer getTemplatePropertiesProperties(List<String> resourceProperties, List<String> templateResources) {
+		
+		Set<String> templatePropertiesResource = new HashSet<>();
+		
+		for (String resource : resourceProperties) {
+            if(templateResources.contains(resource)) {
+            	templatePropertiesResource.add(resource);
+            }
+        }
+		
+		return templatePropertiesResource.size();
+	}
+	
+	public void insert(String resource, TemplatePropertyAnalyzerData data, String order){
 		Map<String, Float> sortedList = new HashMap<>();
-		String order = meta.getOrder();
 		
 		if (order.equals("Ascending")) {
-			sortedList = data.propertiesPercentage.entrySet().stream()
+			sortedList = data.propertiesCompletenessPercentage.entrySet().stream()
 				       .sorted(Map.Entry.comparingByValue())
 				       .collect(Collectors.toMap(
 				          Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 		}
 		else {
-			sortedList = data.propertiesPercentage.entrySet().stream()
+			sortedList = data.propertiesCompletenessPercentage.entrySet().stream()
 				       .sorted((Map.Entry.<String, Float>comparingByValue().reversed()))
 				       .collect(Collectors.toMap(
 				          Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 		}
-		data.propertiesPercentage = sortedList;
-		data.templateProperties = new ArrayList<>(sortedList.keySet());
+		data.propertiesCompletenessPercentage = sortedList;
+		data.properties = new ArrayList<>(sortedList.keySet());
 	}
 	
+	private void writePreviousFieldsOutput() throws KettleStepException {
+		Object[] outputRow = new Object[6];
+		
+		Float percentage = getPercentage(data.totalPropertiesExistingProperties, data.totalExistingResources.size());
+		outputRow[data.outputDBpediaIndex] = meta.getDBpedia();
+		outputRow[data.outputPropertyIndex] = "Total";
+		outputRow[data.outputInsideResourcesIndex] = data.totalPropertiesExistingProperties;
+		outputRow[data.outputMissingPropertiesIndex] = data.totalPropertiesMissingProperties;
+		outputRow[data.outputTotalIndex] = data.totalExistingResources.size();
+		outputRow[data.outputPercentageIndex] = percentage;
+		this.logBasic("Transformation complete");
+		try {
+			CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(),"Total", data.totalPropertiesExistingProperties.toString(), data.totalPropertiesMissingProperties.toString(), String.format("%s", data.totalExistingResources.size()), percentage.toString()), ',');
+			data.CSVwriter.flush();
+	        data.CSVwriter.close();
+	        
+	        data.bufferedWriter.newLine();
+			data.bufferedWriter.write(String.format("To sum up, there are %s properties that have %s resources, in which %s template resources are not in it, leading to a completeness percentage of %s", data.properties.size(), data.totalExistingResources.size(), data.totalPropertiesMissingProperties, percentage));
+			data.bufferedWriter.close();
+			this.logBasic("Output Files were written.");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		putRow(data.outputRowMeta, outputRow);
+}
 	
 	public boolean processRow(StepMetaInterface smi, StepDataInterface sdi) throws KettleException {
 		meta = (TemplatePropertyAnalyzerMeta) smi;
@@ -520,53 +599,8 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 		if (inputRow == null) // no more input to be expected…
 		{
 			if (meta.getChooseInput().equals("Previous fields input")) {
-				
-				Object[] outputRow = new Object[4];
-				
-				initializeOutputFiles();
-				
-				try {
-					data.bufferedWriter.write(String.format("There are %s resources. In some cases, there are properties that are not mapped in the template or template properties that are not in the resource.", data.resources.size()));
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				
-				for (String template: data.templateProperties) {
-					Float completeness = getPercentage(data.properties.get(template), data.resources.size());
-					data.propertiesPercentage.put(template, completeness);
-					insert(template);
-				}
-				
-				data.totalOfResources = data.resources.size() * data.templateProperties.size();
-				
-				for (String template : data.templateProperties) {
-					this.logBasic(template);
-					writeOutput(outputRow, template);
-				}
-				
-				Float percentage = getPercentage(data.totalQuantityOfResourcesThatHasTheProperty, data.totalOfResources);
-				outputRow[data.outputPropertyIndex] = "Total";
-				outputRow[data.outputInsideResourcesIndex] = data.totalQuantityOfResourcesThatHasTheProperty;
-				outputRow[data.outputTotalIndex] = data.totalOfResources;
-				outputRow[data.outputPercentageIndex] = percentage;
-				this.logBasic("Transformation complete");
-				try {
-					CSVUtils.writeLine(data.CSVwriter, Arrays.asList("Total", data.totalQuantityOfResourcesThatHasTheProperty.toString(), String.valueOf(data.totalOfResources), percentage.toString()), ',');
-					
-					data.CSVwriter.flush();
-			        data.CSVwriter.close();
-	            	data.bufferedWriter.newLine();
-					data.bufferedWriter.write(String.format("To sum up, there are %s properties from this template that are inside resources (the amount of all property inside resources), from a total os %s properties that should be inside resources (considering that all the properties should be in all resources). The completude percentage of this template is %s.", data.totalQuantityOfResourcesThatHasTheProperty, data.totalOfResources, percentage));
-					data.bufferedWriter.close();
-					this.logBasic("Output Files were written... ");
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				putRow(data.outputRowMeta, outputRow);
+				writePreviousFieldsOutput();
 			}
-			
 			setOutputDone();
 			return false;
 		}
@@ -577,8 +611,10 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 			data.outputRowMeta = meta.getChooseInput().equals("Previous fields input") ? new RowMeta() : (RowMetaInterface) getInputRowMeta().clone();
 			meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
 			
+			data.outputDBpediaIndex = data.outputRowMeta.indexOfValue( "DBpedia" );
 			data.outputPropertyIndex = data.outputRowMeta.indexOfValue( "Property" );
 			data.outputInsideResourcesIndex = data.outputRowMeta.indexOfValue( "Inside Resources" );
+			data.outputMissingPropertiesIndex = data.outputRowMeta.indexOfValue( "Missing Resources" );
 			data.outputTotalIndex = data.outputRowMeta.indexOfValue( "Total" );
 			data.outputPercentageIndex = data.outputRowMeta.indexOfValue( "Completeness Percentage (%s)" );
 		      
@@ -596,14 +632,17 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 				
 				initializeOutputFiles();
 				
-				data.totalOfResources = data.resources.size() * data.templateProperties.size();
+				data.totalOfResources = data.resources.size() * data.properties.size();
 				
 				try {
-					data.bufferedWriter.write(String.format("There are %s properties inside %s. In some cases, there are resources that doesn't have them.", data.templateProperties.size(), meta.getTemplate()));
+					data.bufferedWriter.write(String.format("There are %s properties inside %s. In some cases, there are resources that doesn't have them.", data.properties.size(), meta.getTemplate()));
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+			}
+			else {
+				initializeOutputFiles();
 			}
 		}
 		
@@ -611,7 +650,9 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 			return writeFinalOutput(inputRow);
 		}
 		else {
+			Object[] outputRow = new Object[6];
 			getPropertiesCompleteness(inputRow);
+			writeOutput(outputRow, data.property);
 			return true;
 		}
 	}

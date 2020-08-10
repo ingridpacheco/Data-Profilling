@@ -257,6 +257,11 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
 		rowMeta.clear();
 		
+		ValueMetaInterface DBpediaMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		DBpediaMeta.setName("DBpedia");
+		DBpediaMeta.setOrigin(origin);
+		rowMeta.addValueMeta(DBpediaMeta);
+		
 		ValueMetaInterface PropertyMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
 		PropertyMeta.setName("Property");
 		PropertyMeta.setOrigin(origin);
@@ -266,6 +271,11 @@ public class TemplatePropertyAnalyzerMeta extends BaseStepMeta implements StepMe
 		InsideResourcesMeta.setName("Inside Resources");
 		InsideResourcesMeta.setOrigin(origin);
 		rowMeta.addValueMeta(InsideResourcesMeta);
+		
+		ValueMetaInterface MissingResourcesMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		MissingResourcesMeta.setName("Missing Resources");
+		MissingResourcesMeta.setOrigin(origin);
+		rowMeta.addValueMeta(MissingResourcesMeta);
 		
 		ValueMetaInterface TotalMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
 		TotalMeta.setName("Total");
