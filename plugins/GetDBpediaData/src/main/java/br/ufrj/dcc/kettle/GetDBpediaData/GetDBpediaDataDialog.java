@@ -46,6 +46,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.core.exception.KettleStepException;
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStepMeta;
@@ -70,6 +73,7 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 	
 	private Group wInputGroup;
 	private ComboVar wDBpedia;
+	private ComboVar wWhichResource;
 	private ComboVar wTemplate;
 	private ComboVar wResourceField;
 	private ComboVar wOption;
@@ -77,6 +81,8 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 	
 	private Group wOutputGroup;
 	private TextVar wOutputCSVBrowse;
+	
+	private String[] resources;
 	
 	private String[] DBpediaValues = {
 			"pt", "en", "ja",
@@ -103,6 +109,10 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 			"Template resources",
 			"Template resources properties",
 			"Resource properties"
+	};
+	private String[] sourceResources = {
+			"Previous Fields",
+			"DBpedia"
 	};
 	private String[] TemplateValues;
 	
@@ -383,8 +393,37 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 	            	GetDBpediaData.setChanged();
 	            }
         	});
+		String whichResourceFieldName = BaseMessages.getString(PKG, "GetDBpediaDataStep.whichResourceField.Label");
+		wWhichResource = appendComboVar(wGetNotMappedResources, defModListener, wInputGroup, whichResourceFieldName);
+		wWhichResource.addSelectionListener(new SelectionAdapter() {
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				widgetSelected(arg0);
+			}
+
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					chooseResourceSource(wWhichResource.getText());
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				GetDBpediaData.setChanged(true);
+			}
+		});
+		wWhichResource.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				wWhichResource.setItems(sourceResources);
+				shell.setCursor(null);
+				busy.dispose();
+			}
+		});
 		String resourceLabel = BaseMessages.getString(PKG, "GetDBpediaDataStep.ResourceField.Label");
-		wResourceField = appendComboVar(wGetNotMappedResources, defModListener, wInputGroup, resourceLabel);
+		wResourceField = appendComboVar(wWhichResource, defModListener, wInputGroup, resourceLabel);
 		wResourceField.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -393,13 +432,7 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
 				shell.setCursor(busy);
 				shell.setCursor(null);
-				try {
-					wResourceField.setItems(getResourceValues(wDBpedia.getText(),wTemplate.getText(), wGetNotMappedResources.getSelection()));
-				} catch (IOException e1) {
-					String[] resources = new String[0];
-					// TODO Auto-generated catch block
-					wResourceField.setItems(resources);
-				}
+				wResourceField.setItems(resources);
 				busy.dispose();
 			}
 		});
@@ -420,7 +453,38 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 	
 	private void chooseOutput(String choice) {
 		wGetNotMappedResources.setEnabled(!choice.equals("Template properties"));
+		wWhichResource.setEnabled(choice.equals("Resource properties"));
 		wResourceField.setEnabled(choice.equals("Resource properties"));
+	}
+	
+	private void chooseResourceSource(String choice) throws IOException {
+		if (choice.equals("Previous Fields")) {
+			resources = getFields(ValueMetaInterface.TYPE_STRING);
+		}
+		else {
+			resources = getResourceValues(wDBpedia.getText(),wTemplate.getText(), wGetNotMappedResources.getSelection());
+		}
+	}
+	
+	private String[] getFields(int type) {
+
+		List<String> result = new ArrayList<String>();
+
+		try {
+			RowMetaInterface inRowMeta = this.transMeta.getPrevStepFields(stepname);
+
+			List<ValueMetaInterface> fields = inRowMeta.getValueMetaList();
+
+			for (ValueMetaInterface field : fields) {
+				if (field.getType() == type || type == -1)
+					result.add(field.getName());
+			}
+
+		} catch (KettleStepException e) {
+			e.printStackTrace();
+		}
+
+		return result.toArray(new String[result.size()]);
 	}
 	
 	@Override
@@ -502,7 +566,12 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 		// Set the shell size, based upon previous time…
 		setSize();
 		
-		getData(GetDBpediaData, true);
+		try {
+			getData(GetDBpediaData, true);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		// Widen the shell size
 		Rectangle shellBounds = shell.getBounds();
@@ -542,8 +611,9 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 	/**
 	* @param consumerMeta
 	* @param copyStepname
+	 * @throws IOException 
 	*/
-	private void getData(GetDBpediaDataMeta GetDBpediaData, boolean copyStepname) {
+	private void getData(GetDBpediaDataMeta GetDBpediaData, boolean copyStepname) throws IOException {
 		if (copyStepname) {
 			wStepname.setText(stepname);
 			if (GetDBpediaData.getDBpedia() != null)
@@ -556,8 +626,12 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 				wResourceField.setText(GetDBpediaData.getResource());
 			if (GetDBpediaData.getOption() != null)
 				wOption.setText(GetDBpediaData.getOption());
+			if (GetDBpediaData.getwhichResource() != null) {
+				wWhichResource.setText(GetDBpediaData.getwhichResource());
+			}
 			wGetNotMappedResources.setSelection(GetDBpediaData.getNotMappedResources());
 			chooseOutput(wOption.getText());
+			chooseResourceSource(wWhichResource.getText());
 		}
 	}
 	
@@ -570,6 +644,7 @@ public class GetDBpediaDataDialog extends BaseStepDialog implements StepDialogIn
 		GetDBpediaData.setTemplate(wTemplate.getText());
 		GetDBpediaData.setNotMappedResources(wGetNotMappedResources.getSelection());
 		GetDBpediaData.setResource(wResourceField.getText());
+		GetDBpediaData.setWhichResource(wWhichResource.getText());
 		GetDBpediaData.setOption(wOption.getText());
 		GetDBpediaData.setChanged();
 		GetDBpediaData.setOutputCSVFile(wOutputCSVBrowse.getText());

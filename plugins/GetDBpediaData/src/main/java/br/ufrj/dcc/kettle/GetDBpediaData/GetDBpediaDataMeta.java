@@ -43,9 +43,18 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 	private Boolean notMappedResources;
 	private String option;
 	private String resource;
+	private String whichResource;
 	
 	public GetDBpediaDataMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public String getwhichResource() {
+		return whichResource;
+	}
+	
+	public void setWhichResource(String whichResource) {
+		this.whichResource = whichResource;
 	}
 	
 	public String getOption() {
@@ -111,6 +120,7 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 	public void setDefault() {
 		notMappedResources = false;
 		option = "Template properties";
+		whichResource = "Previous Fields";
 	// TODO Auto-generated method stub
 	}
 	
@@ -118,6 +128,7 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 		try {
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
+			whichResource = XMLHandler.getTagValue(stepnode,"WHICHRESOURCE");
 			option = XMLHandler.getTagValue(stepnode,"OPTION");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
@@ -136,6 +147,9 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 		if (template != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("TEMPLATE", template));
 		}
+		if (whichResource != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("WHICHRESOURCE", whichResource));
+		}
 		if (option != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("OPTION", option));
 		}
@@ -152,6 +166,7 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 	public void readRep(Repository rep, ObjectId stepId, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleException {
 		try {
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
+			whichResource = rep.getStepAttributeString(stepId, "WHICHRESOURCE");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			option = rep.getStepAttributeString(stepId, "OPTION");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
@@ -166,6 +181,9 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 		try {
 			if (DBpedia != null) {
 				rep.saveStepAttribute(transformationId, stepId, "DBPEDIA", DBpedia);
+			}
+			if (whichResource != null) {
+				rep.saveStepAttribute(transformationId, stepId, "WHICHRESOURCE", whichResource);
 			}
 			if (template != null) {
 				rep.saveStepAttribute(transformationId, stepId, "TEMPLATE", template);

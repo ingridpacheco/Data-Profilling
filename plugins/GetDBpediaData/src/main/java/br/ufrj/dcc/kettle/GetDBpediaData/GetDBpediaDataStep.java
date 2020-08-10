@@ -13,9 +13,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -157,17 +159,45 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 		}
 	}
 	
+	private String getMapValues(String DBpedia) {
+		Map<String, String> mapValueExp = new HashMap<String, String>();
+		mapValueExp.put("pt", "label[class=\"c1\"]:has(a[href^=\"http://pt.dbpedia.org/property\"]) + div[class^=\"c2 value\"]");
+		mapValueExp.put("ja", "span[prefix=\"prop-ja: \"], a[prefix=\"prop-ja: \"]");
+		
+		return mapValueExp.get(DBpedia);
+	}
+	
 	public void getResourceProperties(String resource) {
 		String DBpedia = meta.getDBpedia();
+		String regexpValue = getMapValues(DBpedia);
+		
+		Set<String> resourcesProperties = new HashSet<String>();
+		Integer counter = 0;
 		
 		try {
 			String url = this.urls.getResourceUrl(resource.replace(" ", "_"));
 			Document doc = Jsoup.connect(url).get();
 			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
-			Elements values = doc.select(String.format("label[class=\"c1\"]:has(a[href^=\"http://%s.dbpedia.org/property\"]) + div[class^=\"c2 value\"]", DBpedia));
+			Elements values = doc.select(regexpValue);
 	
 			for (int i = 0; i < properties.size(); i++) {
-				String resourceProperty = properties.get(i).text().split(":")[1];
+				String resourceProperty;
+				if (DBpedia.equals("ja") && values.get(i).toString().matches("^(a).*$")) {
+					String actualProperty = values.get(i).attributes().get("rel").split("prop-ja:")[1];
+					if (resourcesProperties.contains(actualProperty)) {
+						resourceProperty = actualProperty;
+					}
+					else {
+						resourceProperty = properties.get(counter).text().split(":")[1];
+						resourcesProperties.add(resourceProperty);
+						counter += 1;
+					}
+				}
+				else {
+					resourceProperty = properties.get(counter).text().split(":")[1];
+					resourcesProperties.add(resourceProperty);
+					counter += 1;
+				}
 				if (!data.resourceProperties.contains(resourceProperty)) {
 					String propertyValue = values.get(i).text();
 					getFormatedValue(resource, resourceProperty, propertyValue);
@@ -181,20 +211,46 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 	}
 	
 	private void getFormatedValue(String resource, String property, String value) {
-		if (value.matches("^(dbr\\W).*$") && value.contains(" ")) {
-			String[] objects = value.split(" ");
-			for (String obj : objects) {
-				formatValue(obj);
+		if (meta.getDBpedia() == "pt") {
+			if (value.matches("^(dbr\\W).*$") && value.contains(" ")) {
+				String[] objects = value.split(" ");
+				for (String obj : objects) {
+					formatValue(obj);
+					data.resourceProperties.add(property);
+					data.propertyValues.add(propertyValue);
+					data.propertyTypes.add(type);
+				}
+			}
+			else {
+				formatValue(value);
 				data.resourceProperties.add(property);
 				data.propertyValues.add(propertyValue);
 				data.propertyTypes.add(type);
 			}
 		}
 		else {
-			formatValue(value);
+			formatJapaneseValue(value);
 			data.resourceProperties.add(property);
 			data.propertyValues.add(propertyValue);
 			data.propertyTypes.add(type);
+		}
+	}
+	
+	private void formatJapaneseValue(String value) {
+		if (value.matches("^-?\\d*(\\.\\d+)?$")) {
+			type = value.matches("^-?\\d*$") ? "integer" : "float";
+			propertyValue = value;
+			
+		}
+		else {
+			if (value.matches("^(dbpedia-ja\\W).*$") || value.matches("^(template-ja\\W).*$")) {
+				propertyValue = value.matches("^(dbpedia-ja\\W).*$") ? value.split("dbpedia-ja:")[1] : value.split("template-ja:")[1];
+				type = "object";
+			}
+			else {
+				propertyValue = value;
+				type = "string";
+			}
 		}
 	}
 	
@@ -496,7 +552,11 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 			}
 			else {
 				if (meta.getOption().equals("Resource properties")) {
-					data.dataFound.add(meta.getResource());
+					String resource = meta.getResource();
+					if (meta.getwhichResource().equals("Previous Fields")) {
+						resource = getInputRowMeta().getString(inputRow, meta.getResource(), "");
+					}
+					data.dataFound.add(resource);
 				}
 				else {
 					if (meta.getOption().equals("Template resources") || !hasCache()) {
