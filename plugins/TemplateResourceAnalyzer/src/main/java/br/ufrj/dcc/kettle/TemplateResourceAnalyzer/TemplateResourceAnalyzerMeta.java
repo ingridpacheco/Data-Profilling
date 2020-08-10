@@ -257,6 +257,12 @@ public class TemplateResourceAnalyzerMeta extends BaseStepMeta implements StepMe
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
 		rowMeta.clear();
 		
+
+		ValueMetaInterface DBpediaMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		DBpediaMeta.setName("DBpedia");
+		DBpediaMeta.setOrigin(origin);
+		rowMeta.addValueMeta(DBpediaMeta);
+		
 		ValueMetaInterface ResourcesMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
 		ResourcesMeta.setName("Resources");
 		ResourcesMeta.setOrigin(origin);

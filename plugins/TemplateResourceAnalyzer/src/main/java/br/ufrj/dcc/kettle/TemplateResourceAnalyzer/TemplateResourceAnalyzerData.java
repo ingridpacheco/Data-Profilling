@@ -4,8 +4,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
@@ -20,11 +22,14 @@ public class TemplateResourceAnalyzerData extends BaseStepData implements StepDa
 
 	public RowMetaInterface outputRowMeta;
 	
+	int outputDBpediaIndex = -1;
 	int outputResourcesIndex = -1;
 	int outputExistingPropertiesIndex = -1;
 	int outputMissingPropertiesIndex = -1;
 	int outputTotalIndex = -1;
 	int outputPercentageIndex = -1;
+	
+	String resource;
 	
 	List<String> resources = new ArrayList<>();
 	List<String> templateProperties = new ArrayList<>();
@@ -33,6 +38,7 @@ public class TemplateResourceAnalyzerData extends BaseStepData implements StepDa
 	Map<String,Integer> resourcesExistingProperties = new HashMap<>();
 	Map<String,Integer> resourcesNotMappedProperties = new HashMap<>();
 	Map<String,Integer> resourcesMissingProperties = new HashMap<>();
+	Set<String> totalExistingProperties = new HashSet<String>();
 	
 	String DBpediaVersion = "";
 	String template = "";
