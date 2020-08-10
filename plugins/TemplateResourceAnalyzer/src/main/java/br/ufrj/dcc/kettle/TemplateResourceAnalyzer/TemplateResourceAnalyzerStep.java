@@ -454,7 +454,7 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		
 		Float completeness = getPercentage(templatePropertiesResources, templateProperties.length);
 		data.resourcesCompletenessPercentage.put(resource, completeness);
-		insert(resource, data, meta.getOrder());
+//		insert(resource, data, meta.getOrder());
 	}
 	
 	private void writePreviousFieldsOutput() throws KettleStepException {
