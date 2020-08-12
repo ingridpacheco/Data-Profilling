@@ -67,6 +67,7 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 	private Group wSecondInputGroup;
 	private ComboVar wInputResource;
 	private ComboVar wResourceProperties;
+	private ComboVar wPropertyField;
 	private ComboVar wDBpedia;
 	private ComboVar wTemplate;
 	private Button wGetNotMappedResources;
@@ -236,53 +237,8 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 		item.setText(BaseMessages.getString(PKG, "PropertiesAnalyzerStep.Tab.InputFields"));
 		Composite cpt = swthlp.appendComposite(wTabFolder, lastControl);
 		
-		String DBpediaLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.DBpediaField.Label");
-		wDBpedia = appendComboVar(null, defModListener, cpt, DBpediaLabel);
-		wDBpedia.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				wDBpedia.setItems(DBpediaValues);
-				shell.setCursor(null);
-				busy.dispose();
-			}
-		});
-		
-		String templateLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.TemplateField.Label");
-		wTemplate = appendComboVar(wDBpedia, defModListener, cpt, templateLabel);
-		wTemplate.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				shell.setCursor(null);
-				wTemplate.setItems(getTemplateValues(wDBpedia.getText()));
-				busy.dispose();
-			}
-		});
-		
-		String propertyLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.PropertyField.Label");	
-		wProperty = appendComboVar(wTemplate, defModListener, cpt, propertyLabel);
-		wProperty.addFocusListener(new FocusListener() {
-			public void focusLost(FocusEvent e) {
-			}
-
-			public void focusGained(FocusEvent e) {
-				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
-				shell.setCursor(busy);
-				shell.setCursor(null);
-				wProperty.setItems(getPropertyValues(wDBpedia.getText(), wTemplate.getText()));
-				busy.dispose();
-			}
-		});
-		
 		String chooseInputField = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.ChooseInput.Label");
-		wChooseInput = appendComboVar(wProperty, defModListener, cpt, chooseInputField);
+		wChooseInput = appendComboVar(null, defModListener, cpt, chooseInputField);
 		wChooseInput.addFocusListener(new FocusListener() {
 			public void focusLost(FocusEvent e) {
 			}
@@ -339,11 +295,71 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 			}
 		});
 		
+		String propertyField = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.InputPropertyField.Label");
+		wPropertyField = appendComboVar(wResourceProperties, defModListener, wFirstInputGroup, propertyField);
+		wPropertyField.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wPropertyField.setItems(getFields(ValueMetaInterface.TYPE_STRING));
+				busy.dispose();
+			}
+		});
+		
 		String secondInputFieldName = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.SecondInputFields.Label");
 		wSecondInputGroup = swthlp.appendGroup(cpt, wFirstInputGroup, secondInputFieldName);
 		
+		String DBpediaLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.DBpediaField.Label");
+		wDBpedia = appendComboVar(wSecondInputGroup, defModListener, wSecondInputGroup, DBpediaLabel);
+		wDBpedia.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				wDBpedia.setItems(DBpediaValues);
+				shell.setCursor(null);
+				busy.dispose();
+			}
+		});
+		
+		String templateLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.TemplateField.Label");
+		wTemplate = appendComboVar(wDBpedia, defModListener, wSecondInputGroup, templateLabel);
+		wTemplate.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wTemplate.setItems(getTemplateValues(wDBpedia.getText()));
+				busy.dispose();
+			}
+		});
+		
+		String propertyLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.PropertyField.Label");	
+		wProperty = appendComboVar(wTemplate, defModListener, wSecondInputGroup, propertyLabel);
+		wProperty.addFocusListener(new FocusListener() {
+			public void focusLost(FocusEvent e) {
+			}
+
+			public void focusGained(FocusEvent e) {
+				Cursor busy = new Cursor(shell.getDisplay(), SWT.CURSOR_WAIT);
+				shell.setCursor(busy);
+				shell.setCursor(null);
+				wProperty.setItems(getPropertyValues(wDBpedia.getText(), wTemplate.getText()));
+				busy.dispose();
+			}
+		});
+		
 		String notMappedResourcesLabel = BaseMessages.getString(PKG, "PropertiesAnalyzerStep.GetNotMappedFields.Label");	
-		wGetNotMappedResources = swthlp.appendCheckboxRow(wSecondInputGroup, wSecondInputGroup, notMappedResourcesLabel,
+		wGetNotMappedResources = swthlp.appendCheckboxRow(wSecondInputGroup, wProperty, notMappedResourcesLabel,
 				new SelectionListener() {
 	            @Override
 	            public void widgetSelected(SelectionEvent arg0)
@@ -411,6 +427,10 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 		wInputResource.setEnabled(enabled);
 		wResourceProperties.setEnabled(enabled);
 		wGetNotMappedResources.setEnabled(!enabled);
+		wDBpedia.setEnabled(!enabled);
+		wTemplate.setEnabled(!enabled);
+		wProperty.setEnabled(!enabled);
+		wPropertyField.setEnabled(enabled);
 	}
 	
 	private String[] getFields(int type) {
@@ -588,10 +608,13 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 		
 		if (PropertyAnalyzer.getResourceProperties() != null)
 			wResourceProperties.setText(PropertyAnalyzer.getResourceProperties());
+		if (PropertyAnalyzer.getInputProperty() != null)
+			wPropertyField.setText(PropertyAnalyzer.getInputProperty());
 		if (PropertyAnalyzer.getInputResource() != null)
 			wInputResource.setText(PropertyAnalyzer.getInputResource());
 		if (PropertyAnalyzer.getChooseInput() != null)
 			wChooseInput.setText(PropertyAnalyzer.getChooseInput());
+		
 		chooseInputField(wChooseInput.getText());
 	}
 	
@@ -606,6 +629,7 @@ public class PropertyAnalyzerDialog extends BaseStepDialog implements StepDialog
 		// Setting the  settings to the meta object
 		PropertyAnalyzer.setResourceProperties(wResourceProperties.getText());
 		PropertyAnalyzer.setInputResource(wInputResource.getText());
+		PropertyAnalyzer.setInputProperty(wPropertyField.getText());
 		PropertyAnalyzer.setDBpedia(wDBpedia.getText());
 		PropertyAnalyzer.setTemplate(wTemplate.getText());
 		PropertyAnalyzer.setProperty(wProperty.getText());

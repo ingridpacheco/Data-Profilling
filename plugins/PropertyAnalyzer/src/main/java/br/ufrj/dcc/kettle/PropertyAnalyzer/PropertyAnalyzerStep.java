@@ -280,7 +280,7 @@ public class PropertyAnalyzerStep extends BaseStep implements StepInterface {
 		Object[] outputRow = RowDataUtil.resizeArray( inputRow, 4 );
 		
 		if (meta.getChooseInput().equals("Previous resources input")) {
-			String templateProperty = meta.getProperty();
+			String templateProperty = getInputRowMeta().getString(inputRow, meta.getInputProperty(), "");
 			String resource = getInputRowMeta().getString(inputRow, meta.getInputResource(), "");
 			String[] properties = getInputRowMeta().getString(inputRow, meta.getResourceProperties(), "").split(", ");
 			List<String> resourceProperties = new ArrayList<String>(Arrays.asList(properties));

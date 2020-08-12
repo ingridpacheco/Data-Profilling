@@ -46,11 +46,20 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 	public String browseOutputCSVFilename;
 	private Boolean notMappedResources;
 	private String resourcesProperties;
+	private String inputProperty;
 	private String resources;
 	private String chooseInput;
 	
 	public PropertyAnalyzerMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public String getInputProperty() {
+		return inputProperty;
+	}
+	
+	public void setInputProperty(String inputProperty) {
+		this.inputProperty = inputProperty;
 	}
 	
 	public String getChooseInput() {
@@ -165,6 +174,7 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 			DBpedia = XMLHandler.getTagValue(stepnode,"DBPEDIA");
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
 			resourcesProperties = XMLHandler.getTagValue(stepnode,"RESOURCESPROPERTIES");
+			inputProperty = XMLHandler.getTagValue(stepnode,"INPUTPROPERTY");
 			resources = XMLHandler.getTagValue(stepnode,"RESOURCES");
 			property = XMLHandler.getTagValue(stepnode,"PROPERTY");
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
@@ -182,6 +192,9 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 		StringBuilder retVal = new StringBuilder();
 		if (DBpedia != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("DBPEDIA", DBpedia));
+		}
+		if (inputProperty != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("INPUTPROPERTY", inputProperty));
 		}
 		if (template != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("TEMPLATE", template));
@@ -214,6 +227,7 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 	public void readRep(Repository rep, ObjectId stepId, List<DatabaseMeta> databases, Map<String, Counter> counters) throws KettleException {
 		try {
 			DBpedia = rep.getStepAttributeString(stepId, "DBPEDIA");
+			inputProperty = rep.getStepAttributeString(stepId, "INPUTPROPERTY");
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			property = rep.getStepAttributeString(stepId, "PROPERTY");
 			resource = rep.getStepAttributeString(stepId, "RESOURCE");
@@ -232,6 +246,9 @@ public class PropertyAnalyzerMeta extends BaseStepMeta implements StepMetaInterf
 		try {
 			if (DBpedia != null) {
 				rep.saveStepAttribute(transformationId, stepId, "DBPEDIA", DBpedia);
+			}
+			if (inputProperty != null) {
+				rep.saveStepAttribute(transformationId, stepId, "INPUTPROPERTY", inputProperty);
 			}
 			if (template != null) {
 				rep.saveStepAttribute(transformationId, stepId, "TEMPLATE", template);
