@@ -1,0 +1,109 @@
+Subject;Predicate;Value
+Sao Paulo;hasc;BR.SP
+Sao Paulo;confirmed;140549
+Sao Paulo;death;9058
+Sao Paulo;recovered;
+Rio de Janeiro;hasc;BR.RJ
+Rio de Janeiro;confirmed;64533
+Rio de Janeiro;death;6639
+Rio de Janeiro;recovered;
+Ceara;hasc;BR.CE
+Ceara;confirmed;63575
+Ceara;death;3965
+Ceara;recovered;
+Para;hasc;BR.PB
+Para;confirmed;53176
+Para;death;3612
+Para;recovered;
+Amazonas;hasc;BR.AM
+Amazonas;confirmed;48785
+Amazonas;death;2232
+Amazonas;recovered;
+Maranhao;hasc;BR.MA
+Maranhao;confirmed;45470
+Maranhao;death;1132
+Maranhao;recovered;
+Pernambuco;hasc;BR.PE
+Pernambuco;confirmed;39361
+Pernambuco;death;3270
+Pernambuco;recovered;
+Bahia;hasc;BR.BA
+Bahia;confirmed;27396
+Bahia;death;846
+Bahia;recovered;
+Paraiba;hasc;BR.PA
+Paraiba;confirmed;19787
+Paraiba;death;467
+Paraiba;recovered;
+Espirito Santo;hasc;BR.ES
+Espirito Santo;confirmed;18950
+Espirito Santo;death;806
+Espirito Santo;recovered;
+Distrito Federal;hasc;BR.DF
+Distrito Federal;confirmed;15850
+Distrito Federal;death;208
+Distrito Federal;recovered;
+Minas Gerais;hasc;BR.MG
+Minas Gerais;confirmed;14939
+Minas Gerais;death;368
+Minas Gerais;recovered;
+Alagoas;hasc;BR.AL
+Alagoas;confirmed;14818
+Alagoas;death;582
+Alagoas;recovered;
+Amapa;hasc;BR.AP
+Amapa;confirmed;12773
+Amapa;death;269
+Amapa;recovered;
+Rio Grande do Sul;hasc;BR.RS
+Rio Grande do Sul;confirmed;12037
+Rio Grande do Sul;death;283
+Rio Grande do Sul;recovered;
+Santa Catarina;hasc;BR.SC
+Santa Catarina;confirmed;11285
+Santa Catarina;death;166
+Santa Catarina;recovered;
+Rio Grande do Norte;hasc;BR.RN
+Rio Grande do Norte;confirmed;9449
+Rio Grande do Norte;death;410
+Rio Grande do Norte;recovered;
+Sergipe;hasc;BR.SE
+Sergipe;confirmed;8972
+Sergipe;death;208
+Sergipe;recovered;
+Rondonia;hasc;BR.RO
+Rondonia;confirmed;7700
+Rondonia;death;228
+Rondonia;recovered;
+Acre;hasc;BR.AC
+Acre;confirmed;7525
+Acre;death;201
+Acre;recovered;
+Piaui;hasc;BR.PI
+Piaui;confirmed;7105
+Piaui;death;224
+Piaui;recovered;
+Parana;hasc;BR.PR
+Parana;confirmed;6605
+Parana;death;232
+Parana;recovered;
+Goias;hasc;BR.GO
+Goias;confirmed;5669
+Goias;death;172
+Goias;recovered;
+Tocantins;hasc;BR.TO
+Tocantins;confirmed;5505
+Tocantins;death;96
+Tocantins;recovered;
+Roraima;hasc;BR.RR
+Roraima;confirmed;5238
+Roraima;death;139
+Roraima;recovered;
+Mato Grosso;hasc;BR.MT
+Mato Grosso;confirmed;3662
+Mato Grosso;death;96
+Mato Grosso;recovered;
+Mato Grosso do Sul;hasc;BR.MS
+Mato Grosso do Sul;confirmed;2132
+Mato Grosso do Sul;death;21
+Mato Grosso do Sul;recovered;

@@ -1,0 +1,109 @@
+Subject;Predicate;Value
+Sao Paulo;hasc;BR.SP
+Sao Paulo;confirmed;4866
+Sao Paulo;death;304
+Sao Paulo;recovered;
+Rio de Janeiro;hasc;BR.RJ
+Rio de Janeiro;confirmed;1461
+Rio de Janeiro;death;71
+Rio de Janeiro;recovered;
+Ceara;hasc;BR.CE
+Ceara;confirmed;1013
+Ceara;death;29
+Ceara;recovered;
+Amazonas;hasc;BR.AM
+Amazonas;confirmed;532
+Amazonas;death;19
+Amazonas;recovered;
+Minas Gerais;hasc;BR.MG
+Minas Gerais;confirmed;525
+Minas Gerais;death;9
+Minas Gerais;recovered;
+Rio Grande do Sul;hasc;BR.RS
+Rio Grande do Sul;confirmed;481
+Rio Grande do Sul;death;7
+Rio Grande do Sul;recovered;
+Distrito Federal;hasc;BR.DF
+Distrito Federal;confirmed;473
+Distrito Federal;death;10
+Distrito Federal;recovered;
+Parana;hasc;BR.PR
+Parana;confirmed;458
+Parana;death;11
+Parana;recovered;
+Bahia;hasc;BR.BA
+Bahia;confirmed;431
+Bahia;death;10
+Bahia;recovered;
+Santa Catarina;hasc;BR.SC
+Santa Catarina;confirmed;379
+Santa Catarina;death;10
+Santa Catarina;recovered;
+Rio Grande do Norte;hasc;BR.RN
+Rio Grande do Norte;confirmed;246
+Rio Grande do Norte;death;7
+Rio Grande do Norte;recovered;
+Pernambuco;hasc;BR.PE
+Pernambuco;confirmed;223
+Pernambuco;death;30
+Pernambuco;recovered;
+Espirito Santo;hasc;BR.ES
+Espirito Santo;confirmed;194
+Espirito Santo;death;6
+Espirito Santo;recovered;
+Maranhao;hasc;BR.MA
+Maranhao;confirmed;133
+Maranhao;death;2
+Maranhao;recovered;
+Goias;hasc;BR.GO
+Goias;confirmed;119
+Goias;death;5
+Goias;recovered;
+Para;hasc;BR.PB
+Para;confirmed;102
+Para;death;3
+Para;recovered;
+Mato Grosso;hasc;BR.MT
+Mato Grosso;confirmed;76
+Mato Grosso;death;1
+Mato Grosso;recovered;
+Mato Grosso do Sul;hasc;BR.MS
+Mato Grosso do Sul;confirmed;66
+Mato Grosso do Sul;death;1
+Mato Grosso do Sul;recovered;
+Acre;hasc;BR.AC
+Acre;confirmed;50
+Acre;death;0
+Acre;recovered;
+Roraima;hasc;BR.RR
+Roraima;confirmed;42
+Roraima;death;1
+Roraima;recovered;
+Paraiba;hasc;BR.PA
+Paraiba;confirmed;35
+Paraiba;death;4
+Paraiba;recovered;
+Amapa;hasc;BR.AP
+Amapa;confirmed;34
+Amapa;death;2
+Amapa;recovered;
+Sergipe;hasc;BR.SE
+Sergipe;confirmed;32
+Sergipe;death;4
+Sergipe;recovered;
+Alagoas;hasc;BR.AL
+Alagoas;confirmed;31
+Alagoas;death;2
+Alagoas;recovered;
+Piaui;hasc;BR.PI
+Piaui;confirmed;23
+Piaui;death;4
+Piaui;recovered;
+Tocantins;hasc;BR.TO
+Tocantins;confirmed;17
+Tocantins;death;0
+Tocantins;recovered;
+Rondonia;hasc;BR.RO
+Rondonia;confirmed;14
+Rondonia;death;1
+Rondonia;recovered;

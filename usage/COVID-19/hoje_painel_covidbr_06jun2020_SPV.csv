@@ -1,0 +1,190 @@
+Subject;Predicate;Value
+Rondonia;hasc;BR.RO
+Rondonia;data;2020-06-06
+Rondonia;populacaoTCU2019;1777225
+Rondonia;confirmed;7700
+Rondonia;death;228
+Rondonia;Recuperadosnovos;
+Rondonia;emAcompanhamentoNovos;
+Acre;hasc;BR.AC
+Acre;data;2020-06-06
+Acre;populacaoTCU2019;881935
+Acre;confirmed;7525
+Acre;death;201
+Acre;Recuperadosnovos;
+Acre;emAcompanhamentoNovos;
+Amazonas;hasc;BR.AM
+Amazonas;data;2020-06-06
+Amazonas;populacaoTCU2019;4144597
+Amazonas;confirmed;48785
+Amazonas;death;2232
+Amazonas;Recuperadosnovos;
+Amazonas;emAcompanhamentoNovos;
+Roraima;hasc;BR.RR
+Roraima;data;2020-06-06
+Roraima;populacaoTCU2019;605761
+Roraima;confirmed;5238
+Roraima;death;139
+Roraima;Recuperadosnovos;
+Roraima;emAcompanhamentoNovos;
+Para;hasc;BR.PA
+Para;data;2020-06-06
+Para;populacaoTCU2019;8602865
+Para;confirmed;53176
+Para;death;3612
+Para;Recuperadosnovos;
+Para;emAcompanhamentoNovos;
+Amapa;hasc;BR.AP
+Amapa;data;2020-06-06
+Amapa;populacaoTCU2019;845731
+Amapa;confirmed;12773
+Amapa;death;269
+Amapa;Recuperadosnovos;
+Amapa;emAcompanhamentoNovos;
+Tocantins;hasc;BR.TO
+Tocantins;data;2020-06-06
+Tocantins;populacaoTCU2019;1572866
+Tocantins;confirmed;5505
+Tocantins;death;96
+Tocantins;Recuperadosnovos;
+Tocantins;emAcompanhamentoNovos;
+Maranhao;hasc;BR.MA
+Maranhao;data;2020-06-06
+Maranhao;populacaoTCU2019;7075181
+Maranhao;confirmed;45470
+Maranhao;death;1132
+Maranhao;Recuperadosnovos;
+Maranhao;emAcompanhamentoNovos;
+Piaui;hasc;BR.PI
+Piaui;data;2020-06-06
+Piaui;populacaoTCU2019;3273227
+Piaui;confirmed;7105
+Piaui;death;224
+Piaui;Recuperadosnovos;
+Piaui;emAcompanhamentoNovos;
+Ceara;hasc;BR.CE
+Ceara;data;2020-06-06
+Ceara;populacaoTCU2019;9132078
+Ceara;confirmed;63575
+Ceara;death;3965
+Ceara;Recuperadosnovos;
+Ceara;emAcompanhamentoNovos;
+Rio Grande do Norte;hasc;BR.RN
+Rio Grande do Norte;data;2020-06-06
+Rio Grande do Norte;populacaoTCU2019;3506853
+Rio Grande do Norte;confirmed;9449
+Rio Grande do Norte;death;410
+Rio Grande do Norte;Recuperadosnovos;
+Rio Grande do Norte;emAcompanhamentoNovos;
+Paraiba;hasc;BR.PB
+Paraiba;data;2020-06-06
+Paraiba;populacaoTCU2019;4018127
+Paraiba;confirmed;19787
+Paraiba;death;467
+Paraiba;Recuperadosnovos;
+Paraiba;emAcompanhamentoNovos;
+Pernambuco;hasc;BR.PE
+Pernambuco;data;2020-06-06
+Pernambuco;populacaoTCU2019;9557071
+Pernambuco;confirmed;39361
+Pernambuco;death;3270
+Pernambuco;Recuperadosnovos;
+Pernambuco;emAcompanhamentoNovos;
+Alagoas;hasc;BR.AL
+Alagoas;data;2020-06-06
+Alagoas;populacaoTCU2019;3337357
+Alagoas;confirmed;14818
+Alagoas;death;582
+Alagoas;Recuperadosnovos;
+Alagoas;emAcompanhamentoNovos;
+Sergipe;hasc;BR.SE
+Sergipe;data;2020-06-06
+Sergipe;populacaoTCU2019;2298696
+Sergipe;confirmed;8972
+Sergipe;death;208
+Sergipe;Recuperadosnovos;
+Sergipe;emAcompanhamentoNovos;
+Bahia;hasc;BR.BA
+Bahia;data;2020-06-06
+Bahia;populacaoTCU2019;14873064
+Bahia;confirmed;27396
+Bahia;death;846
+Bahia;Recuperadosnovos;
+Bahia;emAcompanhamentoNovos;
+Minas Gerais;hasc;BR.MG
+Minas Gerais;data;2020-06-06
+Minas Gerais;populacaoTCU2019;21168791
+Minas Gerais;confirmed;14939
+Minas Gerais;death;368
+Minas Gerais;Recuperadosnovos;
+Minas Gerais;emAcompanhamentoNovos;
+Espirito Santo;hasc;BR.ES
+Espirito Santo;data;2020-06-06
+Espirito Santo;populacaoTCU2019;4018650
+Espirito Santo;confirmed;18950
+Espirito Santo;death;806
+Espirito Santo;Recuperadosnovos;
+Espirito Santo;emAcompanhamentoNovos;
+Rio de Janeiro;hasc;BR.RJ
+Rio de Janeiro;data;2020-06-06
+Rio de Janeiro;populacaoTCU2019;17264943
+Rio de Janeiro;confirmed;64533
+Rio de Janeiro;death;6639
+Rio de Janeiro;Recuperadosnovos;
+Rio de Janeiro;emAcompanhamentoNovos;
+Sao Paulo;hasc;BR.SP
+Sao Paulo;data;2020-06-06
+Sao Paulo;populacaoTCU2019;45919049
+Sao Paulo;confirmed;140549
+Sao Paulo;death;9058
+Sao Paulo;Recuperadosnovos;
+Sao Paulo;emAcompanhamentoNovos;
+Parana;hasc;BR.PR
+Parana;data;2020-06-06
+Parana;populacaoTCU2019;11433957
+Parana;confirmed;6605
+Parana;death;232
+Parana;Recuperadosnovos;
+Parana;emAcompanhamentoNovos;
+Santa Catarina;hasc;BR.SC
+Santa Catarina;data;2020-06-06
+Santa Catarina;populacaoTCU2019;7164788
+Santa Catarina;confirmed;11285
+Santa Catarina;death;166
+Santa Catarina;Recuperadosnovos;
+Santa Catarina;emAcompanhamentoNovos;
+Rio Grande do Sul;hasc;BR.RS
+Rio Grande do Sul;data;2020-06-06
+Rio Grande do Sul;populacaoTCU2019;11377239
+Rio Grande do Sul;confirmed;12037
+Rio Grande do Sul;death;283
+Rio Grande do Sul;Recuperadosnovos;
+Rio Grande do Sul;emAcompanhamentoNovos;
+Mato Grosso do Sul;hasc;BR.MS
+Mato Grosso do Sul;data;2020-06-06
+Mato Grosso do Sul;populacaoTCU2019;2778986
+Mato Grosso do Sul;confirmed;2132
+Mato Grosso do Sul;death;21
+Mato Grosso do Sul;Recuperadosnovos;
+Mato Grosso do Sul;emAcompanhamentoNovos;
+Mato Grosso;hasc;BR.MT
+Mato Grosso;data;2020-06-06
+Mato Grosso;populacaoTCU2019;3484466
+Mato Grosso;confirmed;3662
+Mato Grosso;death;96
+Mato Grosso;Recuperadosnovos;
+Mato Grosso;emAcompanhamentoNovos;
+Goias;hasc;BR.GO
+Goias;data;2020-06-06
+Goias;populacaoTCU2019;7018354
+Goias;confirmed;5669
+Goias;death;172
+Goias;Recuperadosnovos;
+Goias;emAcompanhamentoNovos;
+Distrito Federal;hasc;BR.DF
+Distrito Federal;data;2020-06-06
+Distrito Federal;populacaoTCU2019;3015268
+Distrito Federal;confirmed;15850
+Distrito Federal;death;208
+Distrito Federal;Recuperadosnovos;
+Distrito Federal;emAcompanhamentoNovos;
