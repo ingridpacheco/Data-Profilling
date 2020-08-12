@@ -178,7 +178,7 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		Set<String> resourcePropertiesSetList = new HashSet<String>(resourceProperties); 
 		data.resourcesExistingProperties.put(resourceName, resourcePropertiesSetList.size());
 		
-//		data.totalExistingProperties.addAll(resourcePropertiesSetList);
+		data.totalExistingProperties.addAll(templateProperties);
 		
 		Set<String> notMappedProperties = getNotMappedProperties(resourcePropertiesSetList, templatePropertiesSetList);
 		data.resourcesNotMappedProperties.put(resourceName, notMappedProperties.size());
@@ -376,7 +376,7 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 			return true;
 		}
 		else {
-			Float percentage = getPercentage(data.totalResourcesExistingProperties, data.templateProperties.size()*data.quantity);
+			Double percentage = Double.parseDouble(getPercentage(data.totalResourcesExistingProperties - data.totalResourcesNotMappedProperties, data.templateProperties.size()*data.quantity).toString());
 			outputRow[data.outputDBpediaIndex] = meta.getDBpedia();
 			outputRow[data.outputResourcesIndex] = "Total";
 			outputRow[data.outputExistingPropertiesIndex] = data.totalResourcesExistingProperties;
@@ -404,7 +404,7 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 	}
 	
 	private void writeOutput(Object[] outputRow, String resourceName) throws KettleStepException {
-		Float percentage = data.resourcesCompletenessPercentage.get(resourceName);
+		Double percentage = Double.parseDouble(data.resourcesCompletenessPercentage.get(resourceName).toString());
 		data.totalResourcesExistingProperties = data.totalResourcesExistingProperties + data.resourcesExistingProperties.get(resourceName);
 		data.totalResourcesNotMappedProperties = data.totalResourcesNotMappedProperties + data.resourcesNotMappedProperties.get(resourceName);
 		data.totalResourcesMissingProperties = data.totalResourcesMissingProperties + data.resourcesMissingProperties.get(resourceName);
@@ -442,7 +442,7 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		Set<String> resourcesPropertiesSetList = new HashSet<String>(Arrays.asList(resourcesProperties)); 
 		data.resourcesExistingProperties.put(resource, resourcesPropertiesSetList.size());
 		
-//		data.totalExistingProperties.addAll(resourcesPropertiesSetList);
+		data.totalExistingProperties.addAll(new ArrayList<String>(Arrays.asList(templateProperties)));
 		
 		Set<String> missingProperties = getMissingProperties(resourcesPropertiesSetList, templatePropertiesSetList);
 		data.resourcesMissingProperties.put(resource, missingProperties.size());
@@ -454,7 +454,6 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 		
 		Float completeness = getPercentage(templatePropertiesResources, templateProperties.length);
 		data.resourcesCompletenessPercentage.put(resource, completeness);
-//		insert(resource, data, meta.getOrder());
 	}
 	
 	private void writePreviousFieldsOutput() throws KettleStepException {
@@ -462,16 +461,16 @@ public class TemplateResourceAnalyzerStep extends BaseStep implements StepInterf
 				
 			data.quantity = data.resources.size();
 			
-			Float percentage = getPercentage(data.totalResourcesExistingProperties, data.templateProperties.size()*data.quantity);
+			Double percentage = Double.parseDouble(getPercentage(data.totalResourcesExistingProperties - data.totalResourcesNotMappedProperties, data.totalExistingProperties.size()).toString());
 			outputRow[data.outputDBpediaIndex] = meta.getDBpedia();
 			outputRow[data.outputResourcesIndex] = "Total";
 			outputRow[data.outputExistingPropertiesIndex] = data.totalResourcesExistingProperties;
 			outputRow[data.outputMissingPropertiesIndex] = data.totalResourcesMissingProperties;
-			outputRow[data.outputTotalIndex] = data.templateProperties.size() * data.quantity;
+			outputRow[data.outputTotalIndex] = data.totalExistingProperties.size();
 			outputRow[data.outputPercentageIndex] = percentage;
 			this.logBasic("Transformation complete");
 			try {
-				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(),"Total", data.totalResourcesExistingProperties.toString(), data.totalResourcesMissingProperties.toString(), String.format("%s", data.templateProperties.size() * data.quantity), percentage.toString()), ',');
+				CSVUtils.writeLine(data.CSVwriter, Arrays.asList(meta.getDBpedia(),"Total", data.totalResourcesExistingProperties.toString(), data.totalResourcesMissingProperties.toString(), String.format("%s", data.totalExistingProperties.size()), percentage.toString()), ',');
 				data.CSVwriter.flush();
 		        data.CSVwriter.close();
 		        

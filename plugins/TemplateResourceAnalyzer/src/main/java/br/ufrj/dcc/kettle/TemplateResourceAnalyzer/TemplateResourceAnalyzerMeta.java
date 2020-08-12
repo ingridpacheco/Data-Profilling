@@ -283,7 +283,7 @@ public class TemplateResourceAnalyzerMeta extends BaseStepMeta implements StepMe
 		TotalMeta.setOrigin(origin);
 		rowMeta.addValueMeta(TotalMeta);
 		
-		ValueMetaInterface PercentageMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
+		ValueMetaInterface PercentageMeta = new ValueMeta("", ValueMetaInterface.TYPE_NUMBER);
 		PercentageMeta.setName("Completeness Percentage (%)");
 		PercentageMeta.setOrigin(origin);
 		rowMeta.addValueMeta(PercentageMeta);
