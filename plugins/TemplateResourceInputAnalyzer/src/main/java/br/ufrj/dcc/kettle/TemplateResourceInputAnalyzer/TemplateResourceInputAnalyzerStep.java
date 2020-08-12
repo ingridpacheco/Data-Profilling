@@ -247,8 +247,11 @@ public class TemplateResourceInputAnalyzerStep extends BaseStep implements StepI
 				}
 				String resourceName = row.split(",")[0];
 				data.csvResources.add(resourceName);
-				if (checkResource(StringUtils.stripAccents(resourceName.replaceAll("-* *", "").toLowerCase()))) {
-					data.resourcesFound.add(resourceName);
+				
+				if (!meta.getChooseInput().equals("Previous resources input")) {
+					if (checkResource(StringUtils.stripAccents(resourceName.replaceAll("-* *", "").toLowerCase()))) {
+						data.resourcesFound.add(resourceName);
+					}
 				}
 			}
 			csvReader.close();
@@ -331,7 +334,18 @@ public class TemplateResourceInputAnalyzerStep extends BaseStep implements StepI
 			data.outputResourceNameIndex = data.outputRowMeta.indexOfValue( "Resource" );
 			data.outputResourcesOnDBpediaIndex = data.outputRowMeta.indexOfValue( "Resource is on DBpedia?" );
 			
-			getDBpediaResources();
+			if (!meta.getChooseInput().equals("Previous resources input")) {
+				getDBpediaResources();
+			}
+			else {
+				String[] resources = getInputRowMeta().getString(inputRow, meta.getInputResource(), "").split(", ");
+				data.resources = new ArrayList<String>(Arrays.asList(resources));
+				for (String resource : data.csvResources) {
+					if (checkResource(StringUtils.stripAccents(resource.replaceAll("-* *", "").toLowerCase()))) {
+						data.resourcesFound.add(resource);
+					}
+				}
+			}
 			
 			this.logBasic("Reading CSV data");
 			

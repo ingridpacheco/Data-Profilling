@@ -45,9 +45,27 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 	public String browseOutputFilename;
 	public String browseOutputCSVFilename;
 	private Boolean notMappedResources;
+	private String resources;
+	private String chooseInput;
 	
 	public TemplateResourceInputAnalyzerMeta() {
 		super(); // allocate BaseStepInfo
+	}
+	
+	public String getChooseInput() {
+		return chooseInput;
+	}
+	
+	public void setChooseInput(String chooseInput) {
+		this.chooseInput = chooseInput;
+	}
+	
+	public String getInputResource() {
+		return resources;
+	}
+	
+	public void setInputResource(String resources) {
+		this.resources = resources;
 	}
 	
 	public String getDBpedia() {
@@ -128,6 +146,7 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 	@Override
 	public void setDefault() {
 		notMappedResources = false;
+		setChooseInput("Previous resources input");
 	// TODO Auto-generated method stub
 	}
 	
@@ -137,6 +156,8 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 			template = XMLHandler.getTagValue(stepnode,"TEMPLATE");
 			property = XMLHandler.getTagValue(stepnode,"PROPERTY");
 			resource = XMLHandler.getTagValue(stepnode,"RESOURCE");
+			resources = XMLHandler.getTagValue(stepnode,"RESOURCES");
+			chooseInput = XMLHandler.getTagValue(stepnode,"CHOOSEINPUT");
 			browseFilename = XMLHandler.getTagValue(stepnode,"BROWSEFILENAME");
 			browseOutputFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = XMLHandler.getTagValue(stepnode,"BROWSEOUTPUTCSVFILENAME");
@@ -161,6 +182,9 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 		if (resource != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCE", resource));
 		}
+		if (resources != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("RESOURCES", resources));
+		}
 		if (browseFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEFILENAME", browseFilename));
 		}
@@ -169,6 +193,9 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 		}
 		if (browseOutputFilename != null) {
 			retVal.append("    ").append(XMLHandler.addTagValue("BROWSEOUTPUTFILENAME", browseOutputFilename));
+		}
+		if (chooseInput != null) {
+			retVal.append("    ").append(XMLHandler.addTagValue("CHOOSEINPUT", chooseInput));
 		}
 		retVal.append("    ").append(XMLHandler.addTagValue("NOTMAPPEDRESOURCES", notMappedResources));
 		return retVal.toString();
@@ -180,6 +207,8 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 			template = rep.getStepAttributeString(stepId, "TEMPLATE");
 			property = rep.getStepAttributeString(stepId, "PROPERTY");
 			resource = rep.getStepAttributeString(stepId, "RESOURCE");
+			resources = rep.getStepAttributeString(stepId, "RESOURCES");
+			chooseInput = rep.getStepAttributeString(stepId, "CHOOSEINPUT");
 			browseFilename = rep.getStepAttributeString(stepId, "BROWSEFILENAME");
 			browseOutputFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTFILENAME");
 			browseOutputCSVFilename = rep.getStepAttributeString(stepId, "BROWSEOUTPUTCSVFILENAME");
@@ -203,6 +232,9 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 			if (resource != null) {
 				rep.saveStepAttribute(transformationId, stepId, "RESOURCE", resource);
 			}
+			if (resources != null) {
+				rep.saveStepAttribute(transformationId, stepId, "RESOURCES", resources);
+			}
 			if (browseFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEFILENAME", browseFilename);
 			}
@@ -211,6 +243,9 @@ public class TemplateResourceInputAnalyzerMeta extends BaseStepMeta implements S
 			}
 			if (browseOutputFilename != null) {
 				rep.saveStepAttribute(transformationId, stepId, "BROWSEOUTPUTFILENAME", browseOutputFilename);
+			}
+			if (chooseInput != null) {
+				rep.saveStepAttribute(transformationId, stepId, "CHOOSEINPUT", chooseInput);
 			}
 			rep.saveStepAttribute(transformationId, stepId,
 	                "NOTMAPPEDRESOURCES", notMappedResources);
