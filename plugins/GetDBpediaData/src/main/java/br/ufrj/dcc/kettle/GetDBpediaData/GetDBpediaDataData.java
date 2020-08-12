@@ -39,7 +39,7 @@ public class GetDBpediaDataData extends BaseStepData implements StepDataInterfac
 	FileWriter CSVwriter;
 	FileWriter CSVOutput;
 	BufferedWriter bufferedWriter;
-	Boolean isCached;
+	Boolean isCached = false;
 	
 	public GetDBpediaDataData() {
 		super();

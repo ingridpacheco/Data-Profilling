@@ -205,6 +205,8 @@ public class GetDBpediaDataMeta extends BaseStepMeta implements StepMetaInterfac
 	}
 	
 	public void getFields(RowMetaInterface rowMeta, String origin, RowMetaInterface[] info, StepMeta nextStep, VariableSpace space) throws KettleStepException {
+		rowMeta.clear();
+		
 		ValueMetaInterface TemplateMeta = new ValueMeta("", ValueMetaInterface.TYPE_STRING);
 		TemplateMeta.setName("Template");
 		TemplateMeta.setOrigin(origin);

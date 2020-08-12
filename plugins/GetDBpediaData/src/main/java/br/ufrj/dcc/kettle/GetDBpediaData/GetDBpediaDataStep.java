@@ -201,7 +201,8 @@ public class GetDBpediaDataStep extends BaseStep implements StepInterface {
 				if (!data.resourceProperties.contains(resourceProperty)) {
 					String propertyValue = values.get(i).text();
 					getFormatedValue(resource, resourceProperty, propertyValue);
-					cacheProperty(resourceProperty);
+					if (meta.getOption() == "Template resources properties")
+						cacheProperty(resourceProperty);
 				}
 			}
 		} catch (IOException e) {
