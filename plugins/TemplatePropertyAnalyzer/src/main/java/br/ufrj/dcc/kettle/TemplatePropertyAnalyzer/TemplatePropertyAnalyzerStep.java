@@ -170,16 +170,6 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	
 			for (int i = 0; i < properties.size(); i++) {
 				String resourceProperty = properties.get(i).text().split(":")[1];
-//				if (!resourceProperties.contains(resourceProperty)) {
-//					resourceProperties.add(resourceProperty);
-//					if (!data.propertiesValues.containsKey(resourceProperty)) {
-//						data.propertiesValues.put(resourceProperty, 1);
-//					}
-//					else {
-//						Integer quantity = data.propertiesValues.get(resourceProperty);
-//						data.propertiesValues.put(resourceProperty, quantity + 1);
-//					}
-//				}
 				resourceProperties.add(resourceProperty);
 				Integer actualValue = data.propertiesExistingResources.containsKey(resourceProperty) ? data.propertiesExistingResources.get(resourceProperty) : 0;
 				data.propertiesExistingResources.put(resourceProperty, actualValue + 1);
@@ -286,35 +276,6 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 		return missingProperties;
 	}
 	
-//	public void checkPropertiesInResource(String resource) {
-//		String DBpedia = meta.getDBpedia();
-//		List<String> templateProperties = data.properties;
-//		Map<String, Integer> allProperties = data.propertiesValues;
-//		
-//		resource = resource.replace(" ", "_");
-//		try {
-//			String url = String.format("http://%s.dbpedia.org/resource/%s", DBpedia, resource);
-//			Document doc = Jsoup.connect(url).get();
-//			Elements properties = doc.select(String.format("a[href^=\"http://%s.dbpedia.org/property\"]", DBpedia));
-//	
-//			for (int i = 0; i < properties.size(); i++) {
-//				String resourceProperty = properties.get(i).text();
-//				if (templateProperties.contains(resourceProperty.split(":")[1])) {
-//					if (allProperties.containsKey(resourceProperty.split(":")[1])) {
-//						Integer value = allProperties.get(resourceProperty.split(":")[1]);
-//						allProperties.put(resourceProperty.split(":")[1], value + 1);
-//					}
-//					else {
-//						allProperties.put(resourceProperty.split(":")[1], 1);
-//					}
-//				}
-//			}
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//	}
-	
 	public Map<String, Integer> countMissingProperties(Map<String, Integer> missingPropertiesCount, List<String> missingProperties, List<String> allMissingProperties) {
 		for (int i = 0; i < missingProperties.size(); i++) {
 			if (missingPropertiesCount.containsKey(missingProperties.get(i))){
@@ -356,15 +317,6 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 			Float completeness = getPercentage(new HashSet<>(data.propertiesExistingResources.get(property)).size(), data.resources.size());
 			data.propertiesCompletenessPercentage.put(property, completeness);
 	    }
-	    
-//		for(int i = 0; i < data.properties.size(); i++) {
-//			String property = data.properties.get(i);
-//			if (!data.propertiesValues.containsKey(property)) {
-//				data.propertiesValues.put(property, 0);
-//			}
-//			Float percentage = getPercentage(data.propertiesValues.get(property), data.resources.size());
-//			data.propertiesPercentage.put(property, percentage);
-//		}
 	}
 	
 	public Integer getTemplatePropertiesResources(List<String> resourceProperties, List<String> templateProperties) {
@@ -463,7 +415,7 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	}
 	
 	private void writeOutput(Object[] outputRow, String templateProperty) throws KettleStepException {
-		Float percentage = data.propertiesCompletenessPercentage.get(templateProperty);
+		Double percentage = Double.parseDouble(data.propertiesCompletenessPercentage.get(templateProperty).toString());
 		
 		data.totalPropertiesExistingProperties = data.totalPropertiesExistingProperties + data.propertiesExistingResources.get(templateProperty);
 		data.totalPropertiesMissingProperties = data.totalPropertiesMissingProperties + data.propertiesMissingResources.get(templateProperty);
@@ -512,7 +464,6 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 		
 		Float completeness = getPercentage(templatePropertiesResources, templateResources.length);
 		data.propertiesCompletenessPercentage.put(property, completeness);
-//		insert(property, data, meta.getOrder());
 		
 	}
 	
@@ -566,7 +517,7 @@ public class TemplatePropertyAnalyzerStep extends BaseStep implements StepInterf
 	private void writePreviousFieldsOutput() throws KettleStepException {
 		Object[] outputRow = new Object[6];
 		
-		Float percentage = getPercentage(data.totalPropertiesExistingProperties, data.totalExistingResources.size());
+		Double percentage = Double.parseDouble(getPercentage(data.totalPropertiesExistingProperties, data.totalExistingResources.size()).toString());
 		outputRow[data.outputDBpediaIndex] = meta.getDBpedia();
 		outputRow[data.outputPropertyIndex] = "Total";
 		outputRow[data.outputInsideResourcesIndex] = data.totalPropertiesExistingProperties;
