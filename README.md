@@ -10,9 +10,10 @@ To use the project, the only need is to [download the newest version of the plug
 
 ETL4Profiling is currently providing the following plugins:
 
+* [DBpediaTriplification](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/DBpediaTriplification)
+* [GetDBpediaData](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/GetDBpediaData)
 * [InnerProfiling](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/InnerProfiling)
 * [MergeProfiling](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/MergeProfiling)
-* [DBpediaTriplification](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/DBpediaTriplification)
 * [PropertyAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/PropertyAnalyzer)
 * [ResourceInputAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/ResourceInputAnalyzer)
 * [ResourcePropertiesAnalyzer](https://github.com/ingridpacheco/ETL4Profiling/tree/master/plugins/ResourcePropertiesAnalyzer)
@@ -50,6 +51,7 @@ $ mvn archetype:generate -DgroupId=br.ufrj.dcc.kettle.NomeDoPlugin -DartifactId=
 
 This project uses the MIT license. For more details, read [LICENSE.md](LICENSE).
 
-## Inspired in
+## Inspired by
 
-* [ETL4LODPlus](https://github.com/johncurcio/ETL4LODPlus) and [ETL4DBpedia](https://github.com/JeanGabrielNguemaN/ETL4DBpedia)
+* [ETL4LODPlus](https://github.com/johncurcio/ETL4LODPlus)
+* [ETL4DBpedia](https://github.com/JeanGabrielNguemaN/ETL4DBpedia)
