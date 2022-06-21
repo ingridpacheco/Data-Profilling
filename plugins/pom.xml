@@ -119,7 +119,7 @@
 		<!-- parent dependencies -->
 		<pdi.version>9.0.0.0-SNAPSHOT</pdi.version>
 
-		<mysql.version>5.1.35</mysql.version>
+		<mysql.version>8.0.28</mysql.version>
 		<psql.version>9.1-901.jdbc4</psql.version>
 		<slf4j.version>1.7.6</slf4j.version>
 	</properties>
